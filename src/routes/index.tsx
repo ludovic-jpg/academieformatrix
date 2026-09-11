@@ -180,6 +180,9 @@ function Index() {
   const [erreurGeneration, setErreurGeneration] = useState<string | null>(null);
   const [pdfEnCours, setPdfEnCours] = useState(false);
   const [erreurPdf, setErreurPdf] = useState<string | null>(null);
+  const [wordEnCours, setWordEnCours] = useState(false);
+  const [erreurWord, setErreurWord] = useState<string | null>(null);
+
 
   const modeFormation = watch("modeFormation");
   const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
