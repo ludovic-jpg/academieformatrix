@@ -38,6 +38,7 @@ import {
 } from "@/config/programme";
 import {
   programmeSchema,
+  versProgrammeFormation,
   VALEURS_FORMULAIRE_DEFAUT,
   type ProgrammeFormValues,
 } from "@/lib/programme-schema";
