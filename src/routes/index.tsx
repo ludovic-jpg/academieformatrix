@@ -167,6 +167,7 @@ function Index() {
     control,
     watch,
     setValue,
+    getValues,
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<ProgrammeFormValues>({
@@ -177,10 +178,46 @@ function Index() {
 
   const [enCours, setEnCours] = useState(false);
   const [erreurGeneration, setErreurGeneration] = useState<string | null>(null);
+  const [pdfEnCours, setPdfEnCours] = useState(false);
+  const [erreurPdf, setErreurPdf] = useState<string | null>(null);
 
   const modeFormation = watch("modeFormation");
   const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
   const modules = watch("modules");
+  const objectifs = watch("objectifsPedagogiques");
+  const pdfPret =
+    objectifs.some((o) => o.trim().length > 0) &&
+    modules.some((m) => m.titre.trim().length > 0 || m.points.length > 0);
+
+  const telechargerPdf = async () => {
+    setPdfEnCours(true);
+    setErreurPdf(null);
+    try {
+      const valeurs = programmeSchema.parse(getValues());
+      const programme = versProgrammeFormation(valeurs);
+      const [{ pdf }, { ProgrammePdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/lib/pdf/ProgrammePdf"),
+      ]);
+      const blob = await pdf(
+        <ProgrammePdf programme={programme} />,
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const lien = document.createElement("a");
+      lien.href = url;
+      lien.download = `Programme - ${programme.titre}.pdf`;
+      lien.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setErreurPdf(
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue pendant la création du PDF.",
+      );
+    } finally {
+      setPdfEnCours(false);
+    }
+  };
 
   const surGenerationIA = handleSubmit(async (valeurs) => {
     setEnCours(true);
