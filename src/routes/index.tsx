@@ -195,6 +195,10 @@ function Index() {
     try {
       const valeurs = programmeSchema.parse(getValues());
       const programme = versProgrammeFormation(valeurs);
+      // La librairie PDF s'appuie sur Buffer pour décoder le logo.
+      const { Buffer } = await import("buffer");
+      const global = globalThis as unknown as { Buffer?: unknown };
+      if (!global.Buffer) global.Buffer = Buffer;
       const [{ pdf }, { ProgrammePdf }] = await Promise.all([
         import("@react-pdf/renderer"),
         import("@/lib/pdf/ProgrammePdf"),
