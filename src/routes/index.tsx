@@ -71,9 +71,9 @@ function Champ({
   id: string;
   label: string;
   children: React.ReactNode;
-  hint?: string;
-  erreur?: string;
-  obligatoire?: boolean;
+  hint?: string | undefined;
+  erreur?: string | undefined;
+  obligatoire?: boolean | undefined;
 }) {
   return (
     <div className="space-y-2">
