@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Download, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,15 @@ import {
   MODES_FORMATION,
   NIVEAUX,
   PHRASE_METHODES_PEDAGOGIQUES,
-  VALEURS_DEFAUT,
   type ModeFormation,
   type Niveau,
 } from "@/config/programme";
+import {
+  programmeSchema,
+  VALEURS_FORMULAIRE_DEFAUT,
+  versProgrammeFormation,
+  type ProgrammeFormValues,
+} from "@/lib/programme-schema";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,19 +65,32 @@ function Champ({
   label,
   children,
   hint,
+  erreur,
+  obligatoire,
 }: {
   id: string;
   label: string;
   children: React.ReactNode;
-  hint?: string;
+  hint?: string | undefined;
+  erreur?: string | undefined;
+  obligatoire?: boolean | undefined;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-sm font-bold text-primary">
         {label}
+        {obligatoire ? (
+          <span className="ml-1 text-destructive" aria-hidden="true">
+            *
+          </span>
+        ) : null}
       </Label>
       {children}
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {erreur ? (
+        <p className="text-xs font-medium text-destructive">{erreur}</p>
+      ) : hint ? (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -134,42 +153,34 @@ function ListeEditable({
 }
 
 function Index() {
-  const [titre, setTitre] = useState("");
-  const [sousTitre, setSousTitre] = useState("");
-  const [modeFormation, setModeFormation] = useState<ModeFormation>("Présentiel");
-  const [plateforme, setPlateforme] = useState("");
-  const [dureeHeures, setDureeHeures] = useState("");
-  const [nombreModules, setNombreModules] = useState("3");
-  const [publicConcerne, setPublicConcerne] = useState("");
-  const [prerequis, setPrerequis] = useState("");
-  const [niveau, setNiveau] = useState<Niveau>("Débutant");
-  const [modalitesAcces, setModalitesAcces] = useState<string>(VALEURS_DEFAUT.modalitesAcces);
-  const [encadrement, setEncadrement] = useState<string>(VALEURS_DEFAUT.encadrement);
-  const [coordinationPedagogique, setCoordinationPedagogique] = useState<string>(
-    VALEURS_DEFAUT.coordinationPedagogique,
-  );
-  const [suivi, setSuivi] = useState<string>(VALEURS_DEFAUT.suivi);
-  const [validationFormation, setValidationFormation] = useState<string>(
-    VALEURS_DEFAUT.validationFormation,
-  );
-  const [accompagnementPedagogique, setAccompagnementPedagogique] = useState<
-    string[]
-  >([...VALEURS_DEFAUT.accompagnementPedagogique]);
-  const [modalitesEvaluation, setModalitesEvaluation] = useState<string[]>([
-    ...VALEURS_DEFAUT.modalitesEvaluation,
-  ]);
-  const [methodesPedagogiques, setMethodesPedagogiques] = useState<string[]>([
-    ...VALEURS_DEFAUT.methodesPedagogiques,
-  ]);
-  const [moyensPedagogiques, setMoyensPedagogiques] = useState<string[]>([
-    ...VALEURS_DEFAUT.moyensPedagogiques,
-  ]);
+  const {
+    register,
+    control,
+    watch,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<ProgrammeFormValues>({
+    resolver: zodResolver(programmeSchema),
+    defaultValues: VALEURS_FORMULAIRE_DEFAUT,
+    mode: "onChange",
+  });
 
+  const modeFormation = watch("modeFormation");
   const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
+
+  const surGenerationIA = handleSubmit((valeurs) => {
+    // La génération IA sera branchée à l'étape suivante.
+    const programme = versProgrammeFormation(programmeSchema.parse(valeurs));
+    void programme;
+  });
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <form
+        className="mx-auto max-w-4xl px-4 py-8 sm:px-6"
+        onSubmit={surGenerationIA}
+        noValidate
+      >
         {/* En-tête : logo + barre verticale bleu marine */}
         <header className="flex items-stretch gap-4">
           <img
@@ -196,75 +207,103 @@ function Index() {
                 1. Informations générales
               </CardTitle>
               <CardDescription>
-                Intitulé de la formation et modalités de déroulement.
+                Intitulé de la formation et modalités de déroulement. Les
+                champs marqués d'un astérisque sont obligatoires.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Champ id="titre" label="Titre de la formation">
+              <Champ
+                id="titre"
+                label="Titre de la formation"
+                obligatoire
+                erreur={errors.titre?.message}
+              >
                 <Input
                   id="titre"
-                  value={titre}
-                  onChange={(e) => setTitre(e.target.value)}
                   placeholder="Ex. : Maîtriser la prospection commerciale"
+                  aria-invalid={!!errors.titre}
+                  {...register("titre")}
                 />
               </Champ>
-              <Champ id="sous-titre" label="Sous-titre (optionnel)">
+              <Champ
+                id="sous-titre"
+                label="Sous-titre (optionnel)"
+                erreur={errors.sousTitre?.message}
+              >
                 <Input
                   id="sous-titre"
-                  value={sousTitre}
-                  onChange={(e) => setSousTitre(e.target.value)}
                   placeholder="Ex. : Construire un plan d'action commercial efficace"
+                  aria-invalid={!!errors.sousTitre}
+                  {...register("sousTitre")}
                 />
               </Champ>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Champ id="mode-formation" label="Mode de formation">
-                  <Select
-                    value={modeFormation}
-                    onValueChange={(v) => setModeFormation(v as ModeFormation)}
-                  >
-                    <SelectTrigger id="mode-formation">
-                      <SelectValue placeholder="Choisir un mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MODES_FORMATION.map((mode) => (
-                        <SelectItem key={mode} value={mode}>
-                          {mode}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="modeFormation"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) =>
+                          field.onChange(v as ModeFormation)
+                        }
+                      >
+                        <SelectTrigger id="mode-formation">
+                          <SelectValue placeholder="Choisir un mode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MODES_FORMATION.map((mode) => (
+                            <SelectItem key={mode} value={mode}>
+                              {mode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </Champ>
                 {afficherPlateforme && (
-                  <Champ id="plateforme" label="Plateforme utilisée">
+                  <Champ
+                    id="plateforme"
+                    label="Plateforme utilisée"
+                    erreur={errors.plateforme?.message}
+                  >
                     <Input
                       id="plateforme"
-                      value={plateforme}
-                      onChange={(e) => setPlateforme(e.target.value)}
                       placeholder="Ex. : Teams, Zoom, Google Meet"
+                      aria-invalid={!!errors.plateforme}
+                      {...register("plateforme")}
                     />
                   </Champ>
                 )}
-                <Champ id="duree" label="Durée (en heures)">
+                <Champ
+                  id="duree"
+                  label="Durée (en heures)"
+                  obligatoire
+                  erreur={errors.dureeHeures?.message}
+                >
                   <Input
                     id="duree"
                     type="number"
                     min={0}
-                    value={dureeHeures}
-                    onChange={(e) => setDureeHeures(e.target.value)}
                     placeholder="Ex. : 14"
+                    aria-invalid={!!errors.dureeHeures}
+                    {...register("dureeHeures")}
                   />
                 </Champ>
                 <Champ
                   id="nombre-modules"
                   label="Nombre de modules"
                   hint="Contrainte donnée à l'IA pour le découpage du contenu."
+                  erreur={errors.nombreModules?.message}
                 >
                   <Input
                     id="nombre-modules"
                     type="number"
                     min={1}
-                    value={nombreModules}
-                    onChange={(e) => setNombreModules(e.target.value)}
+                    aria-invalid={!!errors.nombreModules}
+                    {...register("nombreModules")}
                   />
                 </Champ>
               </div>
@@ -282,40 +321,61 @@ function Index() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Champ id="public" label="Public concerné">
+              <Champ
+                id="public"
+                label="Public concerné"
+                obligatoire
+                erreur={errors.publicConcerne?.message}
+              >
                 <Textarea
                   id="public"
-                  value={publicConcerne}
-                  onChange={(e) => setPublicConcerne(e.target.value)}
                   placeholder="Ex. : Dirigeants, indépendants, salariés en reconversion…"
                   rows={3}
+                  aria-invalid={!!errors.publicConcerne}
+                  {...register("publicConcerne")}
                 />
               </Champ>
-              <Champ id="prerequis" label="Prérequis">
+              <Champ
+                id="prerequis"
+                label="Prérequis"
+                obligatoire
+                erreur={errors.prerequis?.message}
+              >
                 <Textarea
                   id="prerequis"
-                  value={prerequis}
-                  onChange={(e) => setPrerequis(e.target.value)}
                   placeholder="Ex. : Aucun prérequis / maîtrise de base de l'outil informatique…"
                   rows={3}
+                  aria-invalid={!!errors.prerequis}
+                  {...register("prerequis")}
                 />
               </Champ>
-              <Champ id="niveau" label="Niveau">
-                <Select
-                  value={niveau}
-                  onValueChange={(v) => setNiveau(v as Niveau)}
-                >
-                  <SelectTrigger id="niveau" className="sm:w-64">
-                    <SelectValue placeholder="Choisir un niveau" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {NIVEAUX.map((n) => (
-                      <SelectItem key={n} value={n}>
-                        {n}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <Champ
+                id="niveau"
+                label="Niveau"
+                obligatoire
+                erreur={errors.niveau?.message}
+              >
+                <Controller
+                  control={control}
+                  name="niveau"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v as Niveau)}
+                    >
+                      <SelectTrigger id="niveau" className="sm:w-64">
+                        <SelectValue placeholder="Choisir un niveau" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NIVEAUX.map((n) => (
+                          <SelectItem key={n} value={n}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </Champ>
             </CardContent>
           </Card>
@@ -332,67 +392,93 @@ function Index() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Champ id="modalites-acces" label="Modalités d'accès">
+              <Champ
+                id="modalites-acces"
+                label="Modalités d'accès"
+                erreur={errors.modalitesAcces?.message}
+              >
                 <Textarea
                   id="modalites-acces"
-                  value={modalitesAcces}
-                  onChange={(e) => setModalitesAcces(e.target.value)}
                   rows={5}
+                  {...register("modalitesAcces")}
                 />
               </Champ>
-              <Champ id="encadrement" label="Encadrement">
+              <Champ
+                id="encadrement"
+                label="Encadrement"
+                erreur={errors.encadrement?.message}
+              >
                 <Textarea
                   id="encadrement"
-                  value={encadrement}
-                  onChange={(e) => setEncadrement(e.target.value)}
                   rows={3}
+                  {...register("encadrement")}
                 />
               </Champ>
               <Champ
                 id="coordination"
                 label="Coordination pédagogique"
+                erreur={errors.coordinationPedagogique?.message}
               >
                 <Textarea
                   id="coordination"
-                  value={coordinationPedagogique}
-                  onChange={(e) => setCoordinationPedagogique(e.target.value)}
                   rows={3}
+                  {...register("coordinationPedagogique")}
                 />
               </Champ>
-              <ListeEditable
-                label="Accompagnement pédagogique"
-                valeurs={accompagnementPedagogique}
-                onChange={setAccompagnementPedagogique}
+              <Controller
+                control={control}
+                name="accompagnementPedagogique"
+                render={({ field }) => (
+                  <ListeEditable
+                    label="Accompagnement pédagogique"
+                    valeurs={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
-              <Champ id="suivi" label="Suivi de la formation">
-                <Textarea
-                  id="suivi"
-                  value={suivi}
-                  onChange={(e) => setSuivi(e.target.value)}
-                  rows={3}
-                />
+              <Champ
+                id="suivi"
+                label="Suivi de la formation"
+                erreur={errors.suivi?.message}
+              >
+                <Textarea id="suivi" rows={3} {...register("suivi")} />
               </Champ>
-              <ListeEditable
-                label="Modalités d'évaluation"
-                valeurs={modalitesEvaluation}
-                onChange={setModalitesEvaluation}
+              <Controller
+                control={control}
+                name="modalitesEvaluation"
+                render={({ field }) => (
+                  <ListeEditable
+                    label="Modalités d'évaluation"
+                    valeurs={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
-              <Champ id="validation" label="Validation de la formation">
+              <Champ
+                id="validation"
+                label="Validation de la formation"
+                erreur={errors.validationFormation?.message}
+              >
                 <Textarea
                   id="validation"
-                  value={validationFormation}
-                  onChange={(e) => setValidationFormation(e.target.value)}
                   rows={2}
+                  {...register("validationFormation")}
                 />
               </Champ>
               <div className="space-y-2">
                 <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
                   {PHRASE_METHODES_PEDAGOGIQUES}
                 </p>
-                <ListeEditable
-                  label="Méthodes pédagogiques"
-                  valeurs={methodesPedagogiques}
-                  onChange={setMethodesPedagogiques}
+                <Controller
+                  control={control}
+                  name="methodesPedagogiques"
+                  render={({ field }) => (
+                    <ListeEditable
+                      label="Méthodes pédagogiques"
+                      valeurs={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
               </div>
             </CardContent>
@@ -409,10 +495,16 @@ function Index() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ListeEditable
-                label="Moyens pédagogiques"
-                valeurs={moyensPedagogiques}
-                onChange={setMoyensPedagogiques}
+              <Controller
+                control={control}
+                name="moyensPedagogiques"
+                render={({ field }) => (
+                  <ListeEditable
+                    label="Moyens pédagogiques"
+                    valeurs={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
               />
             </CardContent>
           </Card>
@@ -427,14 +519,21 @@ function Index() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button type="button" disabled size="lg" className="w-full sm:w-auto">
+              <Button
+                type="submit"
+                disabled={!isValid}
+                size="lg"
+                className="w-full sm:w-auto"
+              >
                 <Sparkles className="mr-2 h-4 w-4" />
                 Générer le contenu par IA
               </Button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Disponible à l'étape suivante — le bouton sera activé une fois
-                la génération IA branchée.
-              </p>
+              {!isValid && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Renseignez les 5 champs obligatoires (titre, durée, public
+                  concerné, prérequis et niveau) pour activer la génération.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -469,7 +568,7 @@ function Index() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
