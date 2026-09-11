@@ -226,6 +226,26 @@ function Index() {
     }
   };
 
+  const telechargerWord = async () => {
+    setWordEnCours(true);
+    setErreurWord(null);
+    try {
+      const valeurs = programmeSchema.parse(getValues());
+      const programme = versProgrammeFormation(valeurs);
+      const { genererWord } = await import("@/lib/word/generateWord");
+      await genererWord(programme);
+    } catch (e) {
+      setErreurWord(
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue pendant la création du Word.",
+      );
+    } finally {
+      setWordEnCours(false);
+    }
+  };
+
+
   const surGenerationIA = handleSubmit(async (valeurs) => {
     setEnCours(true);
     setErreurGeneration(null);
