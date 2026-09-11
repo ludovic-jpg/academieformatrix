@@ -760,21 +760,34 @@ function Index() {
                   )}
                   {pdfEnCours ? "Préparation du PDF…" : "Télécharger le PDF"}
                 </Button>
-                <Button type="button" disabled variant="outline" className="flex-1">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Télécharger le Word
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!pdfPret || wordEnCours}
+                  onClick={telechargerWord}
+                >
+                  {wordEnCours ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                  )}
+                  {wordEnCours
+                    ? "Préparation du Word…"
+                    : "Télécharger le Word"}
                 </Button>
               </div>
-              {erreurPdf && (
+              {(erreurPdf || erreurWord) && (
                 <p className="mt-2 text-xs font-medium text-destructive">
-                  {erreurPdf}
+                  {erreurPdf ?? erreurWord}
                 </p>
               )}
               <p className="mt-2 text-xs text-muted-foreground">
                 {pdfPret
-                  ? "Le Word sera disponible à l'étape suivante."
-                  : "Générez d'abord les objectifs et les modules pour activer le téléchargement du PDF."}
+                  ? "Les documents reprennent la charte Formatrix (en-tête, encadré du titre et pied de page sur chaque page)."
+                  : "Générez d'abord les objectifs et les modules pour activer les téléchargements."}
               </p>
+
             </CardContent>
           </Card>
         </div>
