@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Download, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,9 +39,9 @@ import {
 import {
   programmeSchema,
   VALEURS_FORMULAIRE_DEFAUT,
-  versProgrammeFormation,
   type ProgrammeFormValues,
 } from "@/lib/programme-schema";
+import { genererProgramme } from "@/lib/generation.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -157,6 +165,7 @@ function Index() {
     register,
     control,
     watch,
+    setValue,
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<ProgrammeFormValues>({
@@ -165,13 +174,40 @@ function Index() {
     mode: "onChange",
   });
 
+  const [enCours, setEnCours] = useState(false);
+  const [erreurGeneration, setErreurGeneration] = useState<string | null>(null);
+
   const modeFormation = watch("modeFormation");
   const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
+  const modules = watch("modules");
 
-  const surGenerationIA = handleSubmit((valeurs) => {
-    // La génération IA sera branchée à l'étape suivante.
-    const programme = versProgrammeFormation(programmeSchema.parse(valeurs));
-    void programme;
+  const surGenerationIA = handleSubmit(async (valeurs) => {
+    setEnCours(true);
+    setErreurGeneration(null);
+    try {
+      const sortie = await genererProgramme({
+        data: {
+          titre: valeurs.titre,
+          dureeHeures: Number(valeurs.dureeHeures),
+          publicConcerne: valeurs.publicConcerne,
+          niveau: valeurs.niveau,
+          prerequis: valeurs.prerequis,
+          nombreModules: Number(valeurs.nombreModules),
+        },
+      });
+      setValue("objectifsPedagogiques", sortie.objectifs, {
+        shouldValidate: true,
+      });
+      setValue("modules", sortie.modules, { shouldValidate: true });
+    } catch (e) {
+      setErreurGeneration(
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue pendant la génération.",
+      );
+    } finally {
+      setEnCours(false);
+    }
   });
 
   return (
@@ -518,21 +554,137 @@ function Index() {
                 à partir des informations saisies.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button
-                type="submit"
-                disabled={!isValid}
-                size="lg"
-                className="w-full sm:w-auto"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Générer le contenu par IA
-              </Button>
-              {!isValid && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Renseignez les 5 champs obligatoires (titre, durée, public
-                  concerné, prérequis et niveau) pour activer la génération.
-                </p>
+            <CardContent className="space-y-6">
+              <div>
+                <Button
+                  type="submit"
+                  disabled={!isValid || enCours}
+                  size="lg"
+                  className="w-full sm:w-auto"
+                >
+                  {enCours ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  {enCours
+                    ? "Génération en cours…"
+                    : modules.length > 0
+                      ? "Régénérer le contenu par IA"
+                      : "Générer le contenu par IA"}
+                </Button>
+                {!isValid && !enCours && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Renseignez les 5 champs obligatoires (titre, durée, public
+                    concerné, prérequis et niveau) pour activer la génération.
+                  </p>
+                )}
+                {enCours && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    La rédaction peut prendre une à deux minutes, merci de
+                    patienter.
+                  </p>
+                )}
+                {erreurGeneration && (
+                  <p className="mt-2 text-xs font-medium text-destructive">
+                    {erreurGeneration}
+                  </p>
+                )}
+              </div>
+
+              {modules.length > 0 && (
+                <div className="space-y-6 border-t pt-6">
+                  <Controller
+                    control={control}
+                    name="objectifsPedagogiques"
+                    render={({ field }) => (
+                      <ListeEditable
+                        label="Objectifs pédagogiques (modifiables)"
+                        valeurs={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="modules"
+                    render={({ field }) => {
+                      const majModules = (
+                        modulesMaj: { titre: string; points: string[] }[],
+                      ) => field.onChange(modulesMaj);
+                      const majTitre = (index: number, titre: string) =>
+                        majModules(
+                          field.value.map((m, i) =>
+                            i === index ? { ...m, titre } : m,
+                          ),
+                        );
+                      const majPoints = (index: number, points: string[]) =>
+                        majModules(
+                          field.value.map((m, i) =>
+                            i === index ? { ...m, points } : m,
+                          ),
+                        );
+                      return (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-bold text-primary">
+                            Modules (modifiables)
+                          </Label>
+                          {field.value.map((module, index) => (
+                            <div
+                              key={index}
+                              className="space-y-3 rounded-md border p-4"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={module.titre}
+                                  onChange={(e) =>
+                                    majTitre(index, e.target.value)
+                                  }
+                                  placeholder={`Titre du module ${index + 1}`}
+                                  className="font-semibold"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() =>
+                                    majModules(
+                                      field.value.filter((_, i) => i !== index),
+                                    )
+                                  }
+                                  aria-label={`Supprimer le module ${index + 1}`}
+                                  className="shrink-0"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <ListeEditable
+                                label="Points de contenu"
+                                valeurs={module.points}
+                                onChange={(points) => majPoints(index, points)}
+                              />
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              majModules([
+                                ...field.value,
+                                { titre: "", points: [""] },
+                              ])
+                            }
+                            className="border-dashed"
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Ajouter un module
+                          </Button>
+                        </div>
+                      );
+                    }}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>

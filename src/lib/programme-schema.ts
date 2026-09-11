@@ -57,6 +57,14 @@ export const programmeSchema = z.object({
   validationFormation: z.string().trim().max(1000),
   methodesPedagogiques: z.array(z.string().trim().max(500)),
   moyensPedagogiques: z.array(z.string().trim().max(500)),
+  // Champs remplis par l'IA, modifiables ensuite par l'utilisateur
+  objectifsPedagogiques: z.array(z.string().trim().max(500)),
+  modules: z.array(
+    z.object({
+      titre: z.string().trim().max(200),
+      points: z.array(z.string().trim().max(500)),
+    }),
+  ),
 });
 
 export type ProgrammeFormValues = z.input<typeof programmeSchema>;
@@ -80,6 +88,8 @@ export const VALEURS_FORMULAIRE_DEFAUT: ProgrammeFormValues = {
   validationFormation: VALEURS_DEFAUT.validationFormation,
   methodesPedagogiques: [...VALEURS_DEFAUT.methodesPedagogiques],
   moyensPedagogiques: [...VALEURS_DEFAUT.moyensPedagogiques],
+  objectifsPedagogiques: [],
+  modules: [],
 };
 
 /** Construit un ProgrammeFormation complet à partir des valeurs validées. */
@@ -90,7 +100,5 @@ export function versProgrammeFormation(
     ...valeurs,
     modeFormation: valeurs.modeFormation as ProgrammeFormation["modeFormation"],
     niveau: valeurs.niveau as ProgrammeFormation["niveau"],
-    objectifsPedagogiques: [],
-    modules: [],
   };
 }
