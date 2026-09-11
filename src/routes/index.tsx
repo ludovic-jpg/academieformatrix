@@ -143,13 +143,13 @@ function Index() {
   const [publicConcerne, setPublicConcerne] = useState("");
   const [prerequis, setPrerequis] = useState("");
   const [niveau, setNiveau] = useState<Niveau>("Débutant");
-  const [modalitesAcces, setModalitesAcces] = useState(VALEURS_DEFAUT.modalitesAcces);
-  const [encadrement, setEncadrement] = useState(VALEURS_DEFAUT.encadrement);
-  const [coordinationPedagogique, setCoordinationPedagogique] = useState(
+  const [modalitesAcces, setModalitesAcces] = useState<string>(VALEURS_DEFAUT.modalitesAcces);
+  const [encadrement, setEncadrement] = useState<string>(VALEURS_DEFAUT.encadrement);
+  const [coordinationPedagogique, setCoordinationPedagogique] = useState<string>(
     VALEURS_DEFAUT.coordinationPedagogique,
   );
-  const [suivi, setSuivi] = useState(VALEURS_DEFAUT.suivi);
-  const [validationFormation, setValidationFormation] = useState(
+  const [suivi, setSuivi] = useState<string>(VALEURS_DEFAUT.suivi);
+  const [validationFormation, setValidationFormation] = useState<string>(
     VALEURS_DEFAUT.validationFormation,
   );
   const [accompagnementPedagogique, setAccompagnementPedagogique] = useState<
