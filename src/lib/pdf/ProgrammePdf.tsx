@@ -127,7 +127,7 @@ function Entete({ programme }: { programme: ProgrammeFormation }) {
     <View style={styles.entete} fixed>
       <View style={styles.logoLigne}>
         {/* eslint-disable-next-line jsx-a11y/alt-text */}
-        <Image style={styles.logo} src="/logo.png" />
+        <Image style={styles.logo} src={LOGO_SRC} />
         <View style={styles.barre} />
       </View>
       <View style={styles.encadre}>
