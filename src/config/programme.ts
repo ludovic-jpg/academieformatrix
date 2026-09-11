@@ -11,9 +11,9 @@ export type Niveau = "Débutant" | "Intermédiaire" | "Avancé";
 
 export interface ProgrammeFormation {
   titre: string;
-  sousTitre?: string;
+  sousTitre?: string | undefined;
   modeFormation: ModeFormation;
-  plateforme?: string; // affiché seulement si modeFormation contient "synchrone"
+  plateforme?: string | undefined; // affiché seulement si modeFormation contient "synchrone"
   dureeHeures: number;
   nombreModules: number; // contrainte donnée à l'IA pour le découpage du contenu, défaut 3
   publicConcerne: string;
