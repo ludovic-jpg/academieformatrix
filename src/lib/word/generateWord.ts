@@ -4,7 +4,6 @@ import {
   Document,
   Footer,
   Header,
-  HeadingLevel,
   ImageRun,
   LevelFormat,
   Packer,
@@ -260,7 +259,6 @@ export async function genererWord(
     styles: {
       default: {
         document: { run: { font: "Carlito", size: 20, color: TEXTE } },
-        heading1: { run: { font: "Carlito", color: BLEU } },
       },
     },
     numbering: {
@@ -304,6 +302,3 @@ export async function genererWord(
   const blob = await Packer.toBlob(document);
   saveAs(blob, `Programme - ${programme.titre}.docx`);
 }
-
-// Évite un avertissement d'import inutilisé si HeadingLevel devient nécessaire.
-export type { HeadingLevel };
