@@ -38,6 +38,7 @@ import {
 } from "@/config/programme";
 import {
   programmeSchema,
+  versProgrammeFormation,
   VALEURS_FORMULAIRE_DEFAUT,
   type ProgrammeFormValues,
 } from "@/lib/programme-schema";
@@ -166,6 +167,7 @@ function Index() {
     control,
     watch,
     setValue,
+    getValues,
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<ProgrammeFormValues>({
@@ -176,10 +178,50 @@ function Index() {
 
   const [enCours, setEnCours] = useState(false);
   const [erreurGeneration, setErreurGeneration] = useState<string | null>(null);
+  const [pdfEnCours, setPdfEnCours] = useState(false);
+  const [erreurPdf, setErreurPdf] = useState<string | null>(null);
 
   const modeFormation = watch("modeFormation");
   const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
   const modules = watch("modules");
+  const objectifs = watch("objectifsPedagogiques");
+  const pdfPret =
+    objectifs.some((o) => o.trim().length > 0) &&
+    modules.some((m) => m.titre.trim().length > 0 || m.points.length > 0);
+
+  const telechargerPdf = async () => {
+    setPdfEnCours(true);
+    setErreurPdf(null);
+    try {
+      const valeurs = programmeSchema.parse(getValues());
+      const programme = versProgrammeFormation(valeurs);
+      // La librairie PDF s'appuie sur Buffer pour décoder le logo.
+      const { Buffer } = await import("buffer");
+      const global = globalThis as unknown as { Buffer?: unknown };
+      if (!global.Buffer) global.Buffer = Buffer;
+      const [{ pdf }, { ProgrammePdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/lib/pdf/ProgrammePdf"),
+      ]);
+      const blob = await pdf(
+        <ProgrammePdf programme={programme} />,
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const lien = document.createElement("a");
+      lien.href = url;
+      lien.download = `Programme - ${programme.titre}.pdf`;
+      lien.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setErreurPdf(
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue pendant la création du PDF.",
+      );
+    } finally {
+      setPdfEnCours(false);
+    }
+  };
 
   const surGenerationIA = handleSubmit(async (valeurs) => {
     setEnCours(true);
@@ -704,18 +746,34 @@ function Index() {
                 L'aperçu du programme détaillé s'affichera ici.
               </div>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <Button type="button" disabled variant="outline" className="flex-1">
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger le PDF
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!pdfPret || pdfEnCours}
+                  onClick={telechargerPdf}
+                >
+                  {pdfEnCours ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {pdfEnCours ? "Préparation du PDF…" : "Télécharger le PDF"}
                 </Button>
                 <Button type="button" disabled variant="outline" className="flex-1">
                   <FileText className="mr-2 h-4 w-4" />
                   Télécharger le Word
                 </Button>
               </div>
+              {erreurPdf && (
+                <p className="mt-2 text-xs font-medium text-destructive">
+                  {erreurPdf}
+                </p>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">
-                Disponible à l'étape suivante — les exports seront activés une
-                fois la génération des documents branchée.
+                {pdfPret
+                  ? "Le Word sera disponible à l'étape suivante."
+                  : "Générez d'abord les objectifs et les modules pour activer le téléchargement du PDF."}
               </p>
             </CardContent>
           </Card>
