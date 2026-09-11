@@ -742,18 +742,34 @@ function Index() {
                 L'aperçu du programme détaillé s'affichera ici.
               </div>
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <Button type="button" disabled variant="outline" className="flex-1">
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger le PDF
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!pdfPret || pdfEnCours}
+                  onClick={telechargerPdf}
+                >
+                  {pdfEnCours ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {pdfEnCours ? "Préparation du PDF…" : "Télécharger le PDF"}
                 </Button>
                 <Button type="button" disabled variant="outline" className="flex-1">
                   <FileText className="mr-2 h-4 w-4" />
                   Télécharger le Word
                 </Button>
               </div>
+              {erreurPdf && (
+                <p className="mt-2 text-xs font-medium text-destructive">
+                  {erreurPdf}
+                </p>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">
-                Disponible à l'étape suivante — les exports seront activés une
-                fois la génération des documents branchée.
+                {pdfPret
+                  ? "Le Word sera disponible à l'étape suivante."
+                  : "Générez d'abord les objectifs et les modules pour activer le téléchargement du PDF."}
               </p>
             </CardContent>
           </Card>
