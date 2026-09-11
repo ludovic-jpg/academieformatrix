@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Download, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,9 +39,9 @@ import {
 import {
   programmeSchema,
   VALEURS_FORMULAIRE_DEFAUT,
-  versProgrammeFormation,
   type ProgrammeFormValues,
 } from "@/lib/programme-schema";
+import { genererProgramme } from "@/lib/generation.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
