@@ -165,6 +165,7 @@ function Index() {
     register,
     control,
     watch,
+    setValue,
     handleSubmit,
     formState: { errors, isValid },
   } = useForm<ProgrammeFormValues>({
@@ -173,13 +174,40 @@ function Index() {
     mode: "onChange",
   });
 
+  const [enCours, setEnCours] = useState(false);
+  const [erreurGeneration, setErreurGeneration] = useState<string | null>(null);
+
   const modeFormation = watch("modeFormation");
   const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
+  const modules = watch("modules");
 
-  const surGenerationIA = handleSubmit((valeurs) => {
-    // La génération IA sera branchée à l'étape suivante.
-    const programme = versProgrammeFormation(programmeSchema.parse(valeurs));
-    void programme;
+  const surGenerationIA = handleSubmit(async (valeurs) => {
+    setEnCours(true);
+    setErreurGeneration(null);
+    try {
+      const sortie = await genererProgramme({
+        data: {
+          titre: valeurs.titre,
+          dureeHeures: Number(valeurs.dureeHeures),
+          publicConcerne: valeurs.publicConcerne,
+          niveau: valeurs.niveau,
+          prerequis: valeurs.prerequis,
+          nombreModules: Number(valeurs.nombreModules),
+        },
+      });
+      setValue("objectifsPedagogiques", sortie.objectifs, {
+        shouldValidate: true,
+      });
+      setValue("modules", sortie.modules, { shouldValidate: true });
+    } catch (e) {
+      setErreurGeneration(
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue pendant la génération.",
+      );
+    } finally {
+      setEnCours(false);
+    }
   });
 
   return (
