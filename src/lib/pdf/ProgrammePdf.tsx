@@ -29,6 +29,12 @@ Font.register({
   ],
 });
 
+// URL absolue : la librairie PDF n'accepte pas de chemin relatif.
+const LOGO_SRC =
+  typeof window !== "undefined"
+    ? `${window.location.origin}/logo.png`
+    : "/logo.png";
+
 const BLEU = "#1D2C76";
 const TEXTE = "#1A1A1A";
 const GRIS = "#444444";
