@@ -56,7 +56,7 @@ export const VALEURS_DEFAUT = {
     "La formation est assurée par Formatrix en mettant à disposition un formateur expérimenté dans son domaine, disponible selon les modalités et plages horaires préalablement définies.",
   accompagnementPedagogique: [
     "L'apprenant reçoit une convocation dans laquelle l'ensemble des modalités selon la nature et le mode de formation choisis sont explicites.",
-    "Mise à disposition d'une adresse email pour poser des questions en cas de rupture de connexion.",
+    "Mise à disposition de l'adresse email pedagogie@formatrix.fr, à votre disposition 24/24, pour poser des questions en cas de rupture de connexion.",
     "Formulaire de réclamation",
   ],
   suivi:
