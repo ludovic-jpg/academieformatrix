@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   MODES_FORMATION,
   NIVEAUX,
-  PHRASE_METHODES_PEDAGOGIQUES,
+  
   type ModeFormation,
   type Niveau,
   type ProgrammeFormation,
@@ -489,11 +489,11 @@ export function GenerateurProgramme({
           </CardContent>
         </Card>
 
-        {/* 6. Aperçu & exports */}
+        {/* 4. Aperçu & exports */}
         <Card>
           <CardHeader>
             <CardTitle className="text-primary">
-              6. Aperçu &amp; exports
+              4. Aperçu &amp; exports
             </CardTitle>
             <CardDescription>
               Enregistrement de la formation et téléchargement des documents.
