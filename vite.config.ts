@@ -13,7 +13,7 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Charge toutes les variables d'environnement côté serveur (sans préfixe VITE_)
 // pour les routes serveur. Ne jamais les exposer au bundle client.
-const serverEnv = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
+const serverEnv = loadEnv(process.env['NODE_ENV'] ?? "development", process.cwd(), "");
 Object.assign(process.env, serverEnv);
 
 export default defineConfig({
