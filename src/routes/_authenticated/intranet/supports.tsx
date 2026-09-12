@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Download, Eye, Layers, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -67,13 +67,6 @@ interface Formation {
   } | null;
 }
 
-interface SupportGenere {
-  cle: string;
-  nom: string;
-  pptx: Blob;
-  pdf: Blob;
-}
-
 interface FichierSupport {
   id: string;
   nom: string;
@@ -83,22 +76,14 @@ interface FichierSupport {
 
 const PARTIES = ["theorie", "exercices"] as const;
 
-function telecharger(blob: Blob, nomFichier: string) {
-  const url = URL.createObjectURL(blob);
-  const lien = document.createElement("a");
-  lien.href = url;
-  lien.download = nomFichier;
-  lien.click();
-  URL.revokeObjectURL(url);
-}
-
 function Supports() {
   const genererSupportFn = useServerFn(genererSupport);
   const [formations, setFormations] = useState<Formation[]>([]);
   const [formationId, setFormationId] = useState("");
   const [enCours, setEnCours] = useState<string | null>(null);
+  const [progression, setProgression] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [supports, setSupports] = useState<SupportGenere[]>([]);
+  const [fichiers, setFichiers] = useState<FichierSupport[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -113,81 +98,147 @@ function Supports() {
     })();
   }, []);
 
+  /** Liste les supports déjà déposés dans le coffre-fort du parcours. */
+  const chargerFichiers = useCallback(async (idFormation: string) => {
+    if (!idFormation) {
+      setFichiers([]);
+      return;
+    }
+    const { data } = await supabase
+      .from("coffre_fichiers")
+      .select("id, nom, chemin, created_at")
+      .eq("formation_id", idFormation)
+      .order("created_at", { ascending: false });
+    const tous = (data ?? []) as unknown as FichierSupport[];
+    setFichiers(tous.filter((f) => f.nom.startsWith("Parcours de formation - ")));
+  }, []);
+
+  useEffect(() => {
+    void chargerFichiers(formationId);
+  }, [formationId, chargerFichiers]);
+
   const formation = formations.find((f) => f.id === formationId) ?? null;
   const modules = formation?.programme?.modules ?? [];
 
-  const produire = async (
+  const ouvrir = async (fichier: FichierSupport, telechargement: boolean) => {
+    const { data, error } = await supabase.storage
+      .from("coffre")
+      .createSignedUrl(
+        fichier.chemin,
+        300,
+        telechargement ? { download: fichier.nom } : undefined,
+      );
+    if (error || !data) {
+      setErreur("Impossible d'ouvrir ce support pour le moment.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
+  /** Génère un support (théorie ou exercices) et le dépose dans le coffre-fort. */
+  const produireUn = async (
     indexModule: number,
     partie: (typeof PARTIES)[number],
   ) => {
     if (!formation) return;
     const mod = modules[indexModule];
     if (!mod) return;
-    const cle = `${indexModule}-${partie}`;
-    setErreur(null);
-    setEnCours(cle);
-    try {
-      const { data: utilisateur } = await supabase.auth.getUser();
-      if (!utilisateur.user) {
-        throw new Error("Votre session a expiré, reconnectez-vous.");
-      }
 
-      const contenu = await genererSupportFn({
-        data: {
-          titreParcours: formation.titre,
-          numeroModule: indexModule + 1,
-          titreModule: mod.titre,
-          points: mod.points ?? [],
-          niveau: formation.niveau ?? "",
-          publicConcerne: formation.programme?.publicConcerne ?? "",
-          partie,
-        },
-      });
+    const { data: utilisateur } = await supabase.auth.getUser();
+    if (!utilisateur.user) {
+      throw new Error("Votre session a expiré, reconnectez-vous.");
+    }
 
-      const deck: DeckSupport = {
+    const contenu = await genererSupportFn({
+      data: {
         titreParcours: formation.titre,
         numeroModule: indexModule + 1,
         titreModule: mod.titre,
+        points: mod.points ?? [],
+        niveau: formation.niveau ?? "",
+        publicConcerne: formation.programme?.publicConcerne ?? "",
         partie,
-        slides: contenu.slides,
-      };
-      const nom = nomSupport(deck);
-      const [pptx, pdf] = await Promise.all([
-        construirePptx(deck),
-        construireSupportPdf(deck),
-      ]);
+      },
+    });
 
-      // Dépôt automatique dans le coffre-fort pédagogique du parcours.
-      for (const [blob, extension] of [
-        [pptx, "pptx"],
-        [pdf, "pdf"],
-      ] as const) {
-        const chemin = `${utilisateur.user.id}/${formation.id}/${Date.now()}-${nomFichierSur(`${nom}.${extension}`)}`;
-        const { error: erreurDepot } = await supabase.storage
-          .from("coffre")
-          .upload(chemin, blob);
-        if (erreurDepot) throw new Error(erreurDepot.message);
-        const { error: erreurLigne } = await supabase
-          .from("coffre_fichiers")
-          .insert({
-            formateur_id: utilisateur.user.id,
-            formation_id: formation.id,
-            nom: `${nom}.${extension}`,
-            chemin,
-            taille: blob.size,
-          });
-        if (erreurLigne) throw new Error(erreurLigne.message);
-      }
+    const deck: DeckSupport = {
+      titreParcours: formation.titre,
+      numeroModule: indexModule + 1,
+      titreModule: mod.titre,
+      partie,
+      slides: contenu.slides,
+    };
+    const nom = nomSupport(deck);
+    const [pptx, pdf] = await Promise.all([
+      construirePptx(deck),
+      construireSupportPdf(deck),
+    ]);
 
-      setSupports((anciens) => [
-        { cle, nom, pptx, pdf },
-        ...anciens.filter((s) => s.cle !== cle),
-      ]);
+    for (const [blob, extension] of [
+      [pptx, "pptx"],
+      [pdf, "pdf"],
+    ] as const) {
+      const chemin = `${utilisateur.user.id}/${formation.id}/${Date.now()}-${nomFichierSur(`${nom}.${extension}`)}`;
+      const { error: erreurDepot } = await supabase.storage
+        .from("coffre")
+        .upload(chemin, blob);
+      if (erreurDepot) throw new Error(erreurDepot.message);
+      const { error: erreurLigne } = await supabase
+        .from("coffre_fichiers")
+        .insert({
+          formateur_id: utilisateur.user.id,
+          formation_id: formation.id,
+          nom: `${nom}.${extension}`,
+          chemin,
+          taille: blob.size,
+        });
+      if (erreurLigne) throw new Error(erreurLigne.message);
+    }
+  };
+
+  const produire = async (
+    indexModule: number,
+    partie: (typeof PARTIES)[number],
+  ) => {
+    setErreur(null);
+    setEnCours(`${indexModule}-${partie}`);
+    try {
+      await produireUn(indexModule, partie);
+      await chargerFichiers(formationId);
     } catch (e) {
       setErreur(
         e instanceof Error ? e.message : "La génération du support a échoué.",
       );
     } finally {
+      setEnCours(null);
+    }
+  };
+
+  /** Génère d'un seul coup les deux supports de chacun des modules du parcours. */
+  const produireTout = async () => {
+    setErreur(null);
+    setEnCours("tout");
+    const total = modules.length * PARTIES.length;
+    let fait = 0;
+    try {
+      for (let i = 0; i < modules.length; i += 1) {
+        for (const partie of PARTIES) {
+          fait += 1;
+          setProgression(
+            `Module ${i + 1} — ${libellePartie(partie).toLowerCase()} (${fait}/${total})`,
+          );
+          await produireUn(i, partie);
+          await chargerFichiers(formationId);
+        }
+      }
+    } catch (e) {
+      setErreur(
+        e instanceof Error
+          ? e.message
+          : "La génération de l'ensemble des supports a échoué.",
+      );
+    } finally {
+      setProgression(null);
       setEnCours(null);
     }
   };
@@ -220,9 +271,68 @@ function Supports() {
               </SelectContent>
             </Select>
           </div>
+          {modules.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button disabled={enCours !== null} onClick={produireTout}>
+                {enCours === "tout" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Layers className="mr-2 h-4 w-4" />
+                )}
+                Générer les supports de l'ensemble de la formation
+              </Button>
+              {progression && (
+                <span className="text-sm text-muted-foreground">
+                  En cours : {progression}
+                </span>
+              )}
+            </div>
+          )}
           {erreur && <p className="text-sm text-destructive">{erreur}</p>}
         </CardContent>
       </Card>
+
+      {formation && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Supports déjà créés</CardTitle>
+            <CardDescription>
+              Tous les supports de ce parcours, consultables et téléchargeables.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {fichiers.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Aucun support généré pour l'instant.
+              </p>
+            )}
+            {fichiers.map((f) => (
+              <div
+                key={f.id}
+                className="flex flex-wrap items-center gap-2 rounded-md border p-3"
+              >
+                <span className="flex-1 text-sm">{f.nom}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => ouvrir(f, false)}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Aperçu
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => ouvrir(f, true)}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Télécharger
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {formation && modules.length === 0 && (
         <p className="text-sm text-muted-foreground">
@@ -240,7 +350,7 @@ function Supports() {
               {(mod.points ?? []).slice(0, 4).join(" • ")}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             <div className="flex flex-wrap gap-2">
               {PARTIES.map((partie) => (
                 <Button
@@ -259,32 +369,6 @@ function Supports() {
                 </Button>
               ))}
             </div>
-            {supports
-              .filter((s) => s.cle.startsWith(`${index}-`))
-              .map((s) => (
-                <div
-                  key={s.cle}
-                  className="flex flex-wrap items-center gap-2 rounded-md border p-3"
-                >
-                  <span className="flex-1 text-sm">{s.nom}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => telecharger(s.pptx, `${s.nom}.pptx`)}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    PowerPoint
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => telecharger(s.pdf, `${s.nom}.pdf`)}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    PDF
-                  </Button>
-                </div>
-              ))}
           </CardContent>
         </Card>
       ))}
