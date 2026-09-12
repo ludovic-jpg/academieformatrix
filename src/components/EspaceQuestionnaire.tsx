@@ -303,6 +303,35 @@ export function EspaceQuestionnaire({
                 )}
                 Enregistrer
               </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void telechargerQuestionnairePdf({
+                      titre: `${intitule} — ${formation?.titre ?? ""}`,
+                      questions,
+                    })
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Télécharger le PDF
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void telechargerQuestionnairePdf({
+                      titre: `${intitule} — ${formation?.titre ?? ""}`,
+                      questions,
+                      avecCorrige: true,
+                    })
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  PDF corrigé
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -336,6 +365,33 @@ export function EspaceQuestionnaire({
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         Voir
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          void telechargerQuestionnairePdf({
+                            titre: a.titre,
+                            questions: a.questions,
+                          })
+                        }
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          void telechargerQuestionnairePdf({
+                            titre: a.titre,
+                            questions: a.questions,
+                            avecCorrige: true,
+                          })
+                        }
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        PDF corrigé
                       </Button>
                       <Button
                         variant="outline"
