@@ -80,3 +80,26 @@ export const VALEURS_DEFAUT = {
   accessibiliteHandicap:
     "Nos formations sont ouvertes à tous. Si le stagiaire a besoin d'un encadrement particulier, Back to Business se met à votre disposition à l'adresse email backtobusiness.eu@gmail.com afin de prendre en considération votre besoin. Nous serons heureux de créer un cadre de travail adapté à votre progression.",
 } as const;
+
+/**
+ * Les rubriques « Organisation pédagogique » et « Moyens pédagogiques
+ * spécifiques » ne sont plus saisies dans le formulaire : elles sont
+ * toujours reprises depuis les valeurs de l'organisme dans les documents.
+ */
+export const RUBRIQUES_FIXES = {
+  modalitesAcces: VALEURS_DEFAUT.modalitesAcces,
+  encadrement: VALEURS_DEFAUT.encadrement,
+  accompagnementPedagogique: [...VALEURS_DEFAUT.accompagnementPedagogique],
+  suivi: VALEURS_DEFAUT.suivi,
+  modalitesEvaluation: [...VALEURS_DEFAUT.modalitesEvaluation],
+  validationFormation: VALEURS_DEFAUT.validationFormation,
+  methodesPedagogiques: [...VALEURS_DEFAUT.methodesPedagogiques],
+  moyensPedagogiques: [...VALEURS_DEFAUT.moyensPedagogiques],
+};
+
+/** Applique systématiquement les rubriques fixes de l'organisme. */
+export function avecRubriquesFixes(
+  programme: ProgrammeFormation,
+): ProgrammeFormation {
+  return { ...programme, ...RUBRIQUES_FIXES };
+}
