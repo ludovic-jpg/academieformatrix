@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { nomFichierSur } from "@/lib/storage";
 
 export const Route = createFileRoute("/_authenticated/intranet/coffre")({
   component: Coffre,
@@ -103,7 +104,7 @@ function Coffre() {
     setErreur(null);
     const { data: utilisateur } = await supabase.auth.getUser();
     if (!utilisateur.user) return;
-    const chemin = `${utilisateur.user.id}/${formationId}/${Date.now()}-${fichier.name}`;
+    const chemin = `${utilisateur.user.id}/${formationId}/${Date.now()}-${nomFichierSur(fichier.name)}`;
     const { error: erreurUpload } = await supabase.storage
       .from("coffre")
       .upload(chemin, fichier);
