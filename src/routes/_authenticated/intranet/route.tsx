@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
 
 import { EnTeteFormatrix } from "@/components/EnTeteFormatrix";
+import { PhotoProfil } from "@/components/PhotoProfil";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -62,10 +63,13 @@ function Intranet() {
             titre="Espace formateur"
             sousTitre="Back to Business"
           />
-          <Button variant="outline" size="sm" onClick={seDeconnecter}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Se déconnecter
-          </Button>
+          <div className="flex items-center gap-3">
+            <PhotoProfil />
+            <Button variant="outline" size="sm" onClick={seDeconnecter}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Se déconnecter
+            </Button>
+          </div>
         </div>
 
         <nav className="mt-8 flex flex-wrap gap-2 border-b pb-2">

@@ -1,0 +1,1 @@
+ALTER TABLE public.profils_formateurs ADD COLUMN IF NOT EXISTS photo_url text NOT NULL DEFAULT '';

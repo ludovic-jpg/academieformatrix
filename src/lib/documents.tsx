@@ -1,4 +1,4 @@
-import type { ProgrammeFormation } from "@/config/programme";
+import { avecRubriquesFixes, type ProgrammeFormation } from "@/config/programme";
 
 /** Télécharge le programme au format PDF (charte Formatrix). */
 export async function telechargerProgrammePdf(programme: ProgrammeFormation) {
@@ -10,7 +10,9 @@ export async function telechargerProgrammePdf(programme: ProgrammeFormation) {
     import("@react-pdf/renderer"),
     import("@/lib/pdf/ProgrammePdf"),
   ]);
-  const blob = await pdf(<ProgrammePdf programme={programme} />).toBlob();
+  const blob = await pdf(
+    <ProgrammePdf programme={avecRubriquesFixes(programme)} />,
+  ).toBlob();
   const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
   lien.href = url;
@@ -22,5 +24,33 @@ export async function telechargerProgrammePdf(programme: ProgrammeFormation) {
 /** Télécharge le programme au format Word (charte Formatrix). */
 export async function telechargerProgrammeWord(programme: ProgrammeFormation) {
   const { genererWord } = await import("@/lib/word/generateWord");
-  await genererWord(programme);
+  await genererWord(avecRubriquesFixes(programme));
+}
+
+/** Télécharge un questionnaire (test ou évaluation) au format PDF. */
+export async function telechargerQuestionnairePdf(questionnaire: {
+  titre: string;
+  questions: { question: string; propositions: string[]; bonneReponse: number }[];
+  avecCorrige?: boolean;
+}) {
+  const { Buffer } = await import("buffer");
+  const global = globalThis as unknown as { Buffer?: unknown };
+  if (!global.Buffer) global.Buffer = Buffer;
+  const [{ pdf }, { QuestionnairePdf }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("@/lib/pdf/QuestionnairePdf"),
+  ]);
+  const blob = await pdf(
+    <QuestionnairePdf
+      titre={questionnaire.titre}
+      questions={questionnaire.questions}
+      avecCorrige={questionnaire.avecCorrige ?? false}
+    />,
+  ).toBlob();
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = `${questionnaire.titre}${questionnaire.avecCorrige ? " - corrigé" : ""}.pdf`;
+  lien.click();
+  URL.revokeObjectURL(url);
 }

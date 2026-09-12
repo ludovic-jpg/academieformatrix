@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   MODES_FORMATION,
   NIVEAUX,
-  PHRASE_METHODES_PEDAGOGIQUES,
+  
   type ModeFormation,
   type Niveau,
   type ProgrammeFormation,
@@ -345,124 +345,10 @@ export function GenerateurProgramme({
           </CardContent>
         </Card>
 
-        {/* 3. Organisation pédagogique */}
+        {/* 3. Génération IA */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-primary">
-              3. Organisation pédagogique
-            </CardTitle>
-            <CardDescription>
-              Champs pré-remplis avec les valeurs de l'organisme, modifiables si
-              besoin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Champ
-              id="modalites-acces"
-              label="Modalités d'accès"
-              erreur={errors.modalitesAcces?.message}
-            >
-              <Textarea
-                id="modalites-acces"
-                rows={5}
-                {...register("modalitesAcces")}
-              />
-            </Champ>
-            <Champ
-              id="encadrement"
-              label="Encadrement"
-              erreur={errors.encadrement?.message}
-            >
-              <Textarea id="encadrement" rows={3} {...register("encadrement")} />
-            </Champ>
-            <Controller
-              control={control}
-              name="accompagnementPedagogique"
-              render={({ field }) => (
-                <ListeEditable
-                  label="Accompagnement pédagogique"
-                  valeurs={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-            <Champ
-              id="suivi"
-              label="Suivi de la formation"
-              erreur={errors.suivi?.message}
-            >
-              <Textarea id="suivi" rows={3} {...register("suivi")} />
-            </Champ>
-            <Controller
-              control={control}
-              name="modalitesEvaluation"
-              render={({ field }) => (
-                <ListeEditable
-                  label="Modalités d'évaluation"
-                  valeurs={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-            <Champ
-              id="validation"
-              label="Validation de la formation"
-              erreur={errors.validationFormation?.message}
-            >
-              <Textarea
-                id="validation"
-                rows={2}
-                {...register("validationFormation")}
-              />
-            </Champ>
-            <div className="space-y-2">
-              <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                {PHRASE_METHODES_PEDAGOGIQUES}
-              </p>
-              <Controller
-                control={control}
-                name="methodesPedagogiques"
-                render={({ field }) => (
-                  <ListeEditable
-                    label="Méthodes pédagogiques"
-                    valeurs={field.value}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 4. Moyens pédagogiques spécifiques */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-primary">
-              4. Moyens pédagogiques spécifiques
-            </CardTitle>
-            <CardDescription>
-              Matériel et ressources nécessaires au déroulement.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Controller
-              control={control}
-              name="moyensPedagogiques"
-              render={({ field }) => (
-                <ListeEditable
-                  label="Moyens pédagogiques"
-                  valeurs={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </CardContent>
-        </Card>
-
-        {/* 5. Génération IA */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-primary">5. Génération IA</CardTitle>
+            <CardTitle className="text-primary">3. Génération IA</CardTitle>
             <CardDescription>
               Génération des objectifs pédagogiques et du contenu des modules à
               partir des informations saisies.
@@ -603,11 +489,11 @@ export function GenerateurProgramme({
           </CardContent>
         </Card>
 
-        {/* 6. Aperçu & exports */}
+        {/* 4. Aperçu & exports */}
         <Card>
           <CardHeader>
             <CardTitle className="text-primary">
-              6. Aperçu &amp; exports
+              4. Aperçu &amp; exports
             </CardTitle>
             <CardDescription>
               Enregistrement de la formation et téléchargement des documents.

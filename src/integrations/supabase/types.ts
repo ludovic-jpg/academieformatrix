@@ -156,6 +156,7 @@ export type Database = {
           email: string
           nom: string
           numero_declaration_activite: string
+          photo_url: string
           prenom: string
           siret: string
           statut: Database["public"]["Enums"]["statut_candidature"]
@@ -171,6 +172,7 @@ export type Database = {
           email: string
           nom?: string
           numero_declaration_activite?: string
+          photo_url?: string
           prenom?: string
           siret?: string
           statut?: Database["public"]["Enums"]["statut_candidature"]
@@ -186,6 +188,7 @@ export type Database = {
           email?: string
           nom?: string
           numero_declaration_activite?: string
+          photo_url?: string
           prenom?: string
           siret?: string
           statut?: Database["public"]["Enums"]["statut_candidature"]
