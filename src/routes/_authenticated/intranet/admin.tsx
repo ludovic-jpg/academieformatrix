@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/intranet/admin")({
@@ -27,6 +28,27 @@ interface Candidature {
   siret: string;
   statut: string;
   consentement: boolean;
+  created_at: string;
+}
+
+interface DemandeAdmin {
+  id: string;
+  apprenant_nom: string;
+  apprenant_prenom: string;
+  apprenant_email: string;
+  apprenant_telephone: string;
+  entreprise_nom: string;
+  entreprise_siret: string;
+  entreprise_adresse: string;
+  contact_nom: string;
+  contact_email: string;
+  formation_souhaitee: string;
+  periode: string;
+  nombre_heures: number;
+  budget_estime: number;
+  commentaire: string;
+  statut: string;
+  reponse: string;
   created_at: string;
 }
 
@@ -50,6 +72,8 @@ function Administration() {
   const [autorise, setAutorise] = useState<boolean | null>(null);
   const [candidatures, setCandidatures] = useState<Candidature[]>([]);
   const [pieces, setPieces] = useState<PieceAdmin[]>([]);
+  const [demandes, setDemandes] = useState<DemandeAdmin[]>([]);
+  const [reponses, setReponses] = useState<Record<string, string>>({});
   const [chargement, setChargement] = useState(true);
 
   const charger = async () => {
@@ -78,7 +102,27 @@ function Administration() {
       .from("pieces_formateur")
       .select("id, formateur_id, type, nom_fichier, chemin");
     setPieces((piecesData ?? []) as unknown as PieceAdmin[]);
+
+    const { data: demandesData } = await supabase
+      .from("demandes_budget")
+      .select("*")
+      .order("created_at", { ascending: false });
+    const liste = (demandesData ?? []) as unknown as DemandeAdmin[];
+    setDemandes(liste);
+    setReponses(Object.fromEntries(liste.map((d) => [d.id, d.reponse ?? ""])));
     setChargement(false);
+  };
+
+  const repondre = async (demande: DemandeAdmin, statut: string) => {
+    await supabase
+      .from("demandes_budget")
+      .update({
+        reponse: reponses[demande.id] ?? "",
+        statut: statut as "nouvelle" | "en_cours" | "traitee",
+        repondu_at: new Date().toISOString(),
+      })
+      .eq("id", demande.id);
+    await charger();
   };
 
   useEffect(() => {
@@ -118,6 +162,88 @@ function Administration() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-primary">Demandes de budget</CardTitle>
+          <CardDescription>
+            Traitez les demandes envoyées par les formateurs et apportez une
+            réponse qualitative.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {demandes.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Aucune demande pour le moment.
+            </p>
+          )}
+          {demandes.map((demande) => (
+            <div key={demande.id} className="space-y-3 rounded-md border p-4">
+              <div>
+                <p className="text-sm font-bold text-primary">
+                  {demande.apprenant_prenom} {demande.apprenant_nom} —{" "}
+                  {demande.formation_souhaitee}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(demande.created_at).toLocaleDateString("fr-FR")} —{" "}
+                  {demande.statut === "traitee"
+                    ? "traitée"
+                    : demande.statut === "en_cours"
+                      ? "en cours"
+                      : "nouvelle"}
+                </p>
+              </div>
+              <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                <p>
+                  Apprenant : {demande.apprenant_email}{" "}
+                  {demande.apprenant_telephone}
+                </p>
+                <p>
+                  Entreprise : {demande.entreprise_nom} — SIRET{" "}
+                  {demande.entreprise_siret}
+                </p>
+                <p>Adresse : {demande.entreprise_adresse}</p>
+                <p>
+                  Contact : {demande.contact_nom} {demande.contact_email}
+                </p>
+                <p>
+                  Période : {demande.periode} — {demande.nombre_heures} h
+                </p>
+                <p>Budget estimé : {demande.budget_estime} €</p>
+                {demande.commentaire && (
+                  <p className="sm:col-span-2">
+                    Commentaire : {demande.commentaire}
+                  </p>
+                )}
+              </div>
+              <Textarea
+                rows={3}
+                placeholder="Votre réponse au formateur…"
+                value={reponses[demande.id] ?? ""}
+                onChange={(e) =>
+                  setReponses((r) => ({ ...r, [demande.id]: e.target.value }))
+                }
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void repondre(demande, "en_cours")}
+                >
+                  Enregistrer (en cours)
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => void repondre(demande, "traitee")}
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  Répondre et clôturer
+                </Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-primary">

@@ -23,12 +23,14 @@ const ONGLETS = [
   { to: "/intranet/positionnement", label: "Test de Positionnement" },
   { to: "/intranet/acquis", label: "Évaluation des Acquis" },
   { to: "/intranet/coffre", label: "Coffre-fort pédagogique" },
+  { to: "/intranet/budget", label: "Demande de budget" },
 ] as const;
 
 function Intranet() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [estAdmin, setEstAdmin] = useState(false);
+  const [prenom, setPrenom] = useState("");
 
   useEffect(() => {
     let annule = false;
@@ -42,6 +44,12 @@ function Intranet() {
         .eq("role", "admin")
         .maybeSingle();
       if (!annule) setEstAdmin(!!data);
+      const { data: profil } = await supabase
+        .from("profils_formateurs")
+        .select("prenom")
+        .eq("user_id", utilisateur.user.id)
+        .maybeSingle();
+      if (!annule) setPrenom(profil?.prenom ?? "");
     })();
     return () => {
       annule = true;
@@ -61,7 +69,11 @@ function Intranet() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <EnTeteFormatrix
             titre="Espace formateur"
-            sousTitre="Back to Business"
+            sousTitre={
+              prenom
+                ? `Bienvenue ${prenom} dans ton espace formateur`
+                : "Bienvenue dans ton espace formateur"
+            }
           />
           <div className="flex items-center gap-3">
             <PhotoProfil />

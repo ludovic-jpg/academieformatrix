@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Loader2, Trash2, Upload } from "lucide-react";
+import { Check, Eye, Loader2, Trash2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoProfil } from "@/components/PhotoProfil";
 import { signalerPhotoProfilMiseAJour } from "@/hooks/usePhotoProfil";
+import { nomFichierSur } from "@/lib/storage";
 
 export const Route = createFileRoute("/_authenticated/intranet/profil")({
   component: Profil,
@@ -66,7 +67,7 @@ function Profil() {
     if (!user) return;
     setPhotoEnCours(true);
     setErreur(null);
-    const chemin = `${user.id}/photo-${Date.now()}-${fichier.name}`;
+    const chemin = `${user.id}/photo-${Date.now()}-${nomFichierSur(fichier.name)}`;
     const { error: erreurUpload } = await supabase.storage
       .from("avatars")
       .upload(chemin, fichier, { upsert: true });
@@ -145,7 +146,7 @@ function Profil() {
     if (!userId) return;
     setEnvoiEnCours(type);
     setErreur(null);
-    const chemin = `${userId}/${type}/${Date.now()}-${fichier.name}`;
+    const chemin = `${userId}/${type}/${Date.now()}-${nomFichierSur(fichier.name)}`;
     const { error: erreurUpload } = await supabase.storage
       .from("pieces")
       .upload(chemin, fichier);
@@ -163,6 +164,17 @@ function Profil() {
     if (error) setErreur("Le dépôt a échoué : " + error.message);
     await charger();
     setEnvoiEnCours(null);
+  };
+
+  const consulterPiece = async (piece: Piece) => {
+    const { data, error } = await supabase.storage
+      .from("pieces")
+      .createSignedUrl(piece.chemin, 300);
+    if (error || !data?.signedUrl) {
+      setErreur("Impossible d'ouvrir ce document.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noreferrer");
   };
 
   const supprimerPiece = async (piece: Piece) => {
@@ -301,15 +313,26 @@ function Profil() {
                       className="flex items-center justify-between gap-2 text-xs text-muted-foreground"
                     >
                       <span className="truncate">{fichier.nom_fichier}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Supprimer ${fichier.nom_fichier}`}
-                        onClick={() => void supprimerPiece(fichier)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <span className="flex shrink-0 items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void consulterPiece(fichier)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Consulter
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Supprimer ${fichier.nom_fichier}`}
+                          onClick={() => void supprimerPiece(fichier)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </span>
                     </li>
                   ))}
                 </ul>
