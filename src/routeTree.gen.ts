@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as AuthenticatedIntranetRouteRouteImport } from './routes/_authenticated/intranet/route'
 import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authenticated/intranet/index'
+import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
 import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
 
 const IndexRoute = IndexRouteImport.update({
@@ -49,6 +50,12 @@ const AuthenticatedIntranetIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
+const AuthenticatedIntranetFormationsRoute =
+  AuthenticatedIntranetFormationsRouteImport.update({
+    id: '/formations',
+    path: '/formations',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
 const AuthenticatedIntranetProfilRoute =
   AuthenticatedIntranetProfilRouteImport.update({
     id: '/profil',
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
@@ -68,6 +76,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/intranet': typeof AuthenticatedIntranetIndexRoute
 }
@@ -78,6 +87,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/_authenticated/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/_authenticated/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/_authenticated/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/politique-confidentialite'
     | '/intranet'
+    | '/intranet/formations'
     | '/intranet/profil'
     | '/intranet/'
   fileRoutesByTo: FileRoutesByTo
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/politique-confidentialite'
+    | '/intranet/formations'
     | '/intranet/profil'
     | '/intranet'
   id:
@@ -104,6 +116,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/politique-confidentialite'
     | '/_authenticated/intranet'
+    | '/_authenticated/intranet/formations'
     | '/_authenticated/intranet/profil'
     | '/_authenticated/intranet/'
   fileRoutesById: FileRoutesById
@@ -159,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetIndexRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
+    '/_authenticated/intranet/formations': {
+      id: '/_authenticated/intranet/formations'
+      path: '/formations'
+      fullPath: '/intranet/formations'
+      preLoaderRoute: typeof AuthenticatedIntranetFormationsRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
     '/_authenticated/intranet/profil': {
       id: '/_authenticated/intranet/profil'
       path: '/profil'
@@ -170,12 +190,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedIntranetRouteRouteChildren {
+  AuthenticatedIntranetFormationsRoute: typeof AuthenticatedIntranetFormationsRoute
   AuthenticatedIntranetProfilRoute: typeof AuthenticatedIntranetProfilRoute
   AuthenticatedIntranetIndexRoute: typeof AuthenticatedIntranetIndexRoute
 }
 
 const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteChildren =
   {
+    AuthenticatedIntranetFormationsRoute: AuthenticatedIntranetFormationsRoute,
     AuthenticatedIntranetProfilRoute: AuthenticatedIntranetProfilRoute,
     AuthenticatedIntranetIndexRoute: AuthenticatedIntranetIndexRoute,
   }
