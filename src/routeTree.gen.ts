@@ -10,33 +10,109 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
+import { Route as AuthenticatedIntranetRouteRouteImport } from './routes/_authenticated/intranet/route'
+import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authenticated/intranet/index'
+import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PolitiqueConfidentialiteRoute =
+  PolitiqueConfidentialiteRouteImport.update({
+    id: '/politique-confidentialite',
+    path: '/politique-confidentialite',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedIntranetRouteRoute =
+  AuthenticatedIntranetRouteRouteImport.update({
+    id: '/intranet',
+    path: '/intranet',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIntranetIndexRoute =
+  AuthenticatedIntranetIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetProfilRoute =
+  AuthenticatedIntranetProfilRouteImport.update({
+    id: '/profil',
+    path: '/profil',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/intranet': typeof AuthenticatedIntranetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/_authenticated/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/_authenticated/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/politique-confidentialite'
+    | '/intranet'
+    | '/intranet/profil'
+    | '/intranet/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/politique-confidentialite'
+    | '/intranet/profil'
+    | '/intranet'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/politique-confidentialite'
+    | '/_authenticated/intranet'
+    | '/_authenticated/intranet/profil'
+    | '/_authenticated/intranet/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +124,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politique-confidentialite': {
+      id: '/politique-confidentialite'
+      path: '/politique-confidentialite'
+      fullPath: '/politique-confidentialite'
+      preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/intranet': {
+      id: '/_authenticated/intranet'
+      path: '/intranet'
+      fullPath: '/intranet'
+      preLoaderRoute: typeof AuthenticatedIntranetRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/intranet/': {
+      id: '/_authenticated/intranet/'
+      path: '/'
+      fullPath: '/intranet/'
+      preLoaderRoute: typeof AuthenticatedIntranetIndexRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/profil': {
+      id: '/_authenticated/intranet/profil'
+      path: '/profil'
+      fullPath: '/intranet/profil'
+      preLoaderRoute: typeof AuthenticatedIntranetProfilRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
   }
 }
 
+interface AuthenticatedIntranetRouteRouteChildren {
+  AuthenticatedIntranetProfilRoute: typeof AuthenticatedIntranetProfilRoute
+  AuthenticatedIntranetIndexRoute: typeof AuthenticatedIntranetIndexRoute
+}
+
+const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteChildren =
+  {
+    AuthenticatedIntranetProfilRoute: AuthenticatedIntranetProfilRoute,
+    AuthenticatedIntranetIndexRoute: AuthenticatedIntranetIndexRoute,
+  }
+
+const AuthenticatedIntranetRouteRouteWithChildren =
+  AuthenticatedIntranetRouteRoute._addFileChildren(
+    AuthenticatedIntranetRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedIntranetRouteRoute: typeof AuthenticatedIntranetRouteRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedIntranetRouteRoute: AuthenticatedIntranetRouteRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
+  PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
