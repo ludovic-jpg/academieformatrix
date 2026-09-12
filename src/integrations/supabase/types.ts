@@ -14,16 +14,267 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      coffre_fichiers: {
+        Row: {
+          chemin: string
+          created_at: string
+          formateur_id: string
+          formation_id: string
+          id: string
+          nom: string
+          taille: number
+        }
+        Insert: {
+          chemin: string
+          created_at?: string
+          formateur_id: string
+          formation_id: string
+          id?: string
+          nom: string
+          taille?: number
+        }
+        Update: {
+          chemin?: string
+          created_at?: string
+          formateur_id?: string
+          formation_id?: string
+          id?: string
+          nom?: string
+          taille?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coffre_fichiers_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formations: {
+        Row: {
+          created_at: string
+          duree_heures: number
+          formateur_id: string
+          id: string
+          niveau: string
+          programme: Json
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duree_heures?: number
+          formateur_id: string
+          id?: string
+          niveau?: string
+          programme: Json
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duree_heures?: number
+          formateur_id?: string
+          id?: string
+          niveau?: string
+          programme?: Json
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      partages_coffre: {
+        Row: {
+          actif: boolean
+          created_at: string
+          formateur_id: string
+          formation_id: string
+          id: string
+          jeton: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          formateur_id: string
+          formation_id: string
+          id?: string
+          jeton: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          formateur_id?: string
+          formation_id?: string
+          id?: string
+          jeton?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partages_coffre_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pieces_formateur: {
+        Row: {
+          chemin: string
+          created_at: string
+          formateur_id: string
+          id: string
+          nom_fichier: string
+          type: Database["public"]["Enums"]["type_piece"]
+        }
+        Insert: {
+          chemin: string
+          created_at?: string
+          formateur_id: string
+          id?: string
+          nom_fichier: string
+          type: Database["public"]["Enums"]["type_piece"]
+        }
+        Update: {
+          chemin?: string
+          created_at?: string
+          formateur_id?: string
+          id?: string
+          nom_fichier?: string
+          type?: Database["public"]["Enums"]["type_piece"]
+        }
+        Relationships: []
+      }
+      profils_formateurs: {
+        Row: {
+          adresse: string
+          consentement: boolean
+          consentement_at: string | null
+          created_at: string
+          email: string
+          nom: string
+          numero_declaration_activite: string
+          prenom: string
+          siret: string
+          statut: Database["public"]["Enums"]["statut_candidature"]
+          telephone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adresse?: string
+          consentement?: boolean
+          consentement_at?: string | null
+          created_at?: string
+          email: string
+          nom?: string
+          numero_declaration_activite?: string
+          prenom?: string
+          siret?: string
+          statut?: Database["public"]["Enums"]["statut_candidature"]
+          telephone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adresse?: string
+          consentement?: boolean
+          consentement_at?: string | null
+          created_at?: string
+          email?: string
+          nom?: string
+          numero_declaration_activite?: string
+          prenom?: string
+          siret?: string
+          statut?: Database["public"]["Enums"]["statut_candidature"]
+          telephone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      questionnaires: {
+        Row: {
+          created_at: string
+          formateur_id: string
+          formation_id: string
+          id: string
+          questions: Json
+          titre: string
+          type: Database["public"]["Enums"]["type_questionnaire"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          formateur_id: string
+          formation_id: string
+          id?: string
+          questions: Json
+          titre?: string
+          type: Database["public"]["Enums"]["type_questionnaire"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          formateur_id?: string
+          formation_id?: string
+          id?: string
+          questions?: Json
+          titre?: string
+          type?: Database["public"]["Enums"]["type_questionnaire"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaires_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "formateur"
+      statut_candidature: "en_attente" | "validee" | "refusee"
+      type_piece: "cv" | "diplome" | "identite" | "casier" | "autre"
+      type_questionnaire: "positionnement" | "acquis"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +401,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "formateur"],
+      statut_candidature: ["en_attente", "validee", "refusee"],
+      type_piece: ["cv", "diplome", "identite", "casier", "autre"],
+      type_questionnaire: ["positionnement", "acquis"],
+    },
   },
 } as const
