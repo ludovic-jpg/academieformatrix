@@ -4,14 +4,16 @@
 export type ModeFormation =
   | "Présentiel"
   | "Distanciel synchrone"
-  | "Distanciel asynchrone"
   | "Mixte";
 
-export type Niveau = "Débutant" | "Intermédiaire" | "Avancé";
+export type Niveau =
+  | "Débutant"
+  | "Intermédiaire"
+  | "Avancé"
+  | "Débutant à avancé";
 
 export interface ProgrammeFormation {
   titre: string;
-  sousTitre?: string | undefined;
   modeFormation: ModeFormation;
   plateforme?: string | undefined; // affiché seulement si modeFormation contient "synchrone"
   dureeHeures: number;
@@ -21,7 +23,6 @@ export interface ProgrammeFormation {
   niveau: Niveau;
   modalitesAcces: string;
   encadrement: string;
-  coordinationPedagogique: string;
   accompagnementPedagogique: string[];
   suivi: string;
   modalitesEvaluation: string[];
@@ -35,26 +36,28 @@ export interface ProgrammeFormation {
 export const MODES_FORMATION: ModeFormation[] = [
   "Présentiel",
   "Distanciel synchrone",
-  "Distanciel asynchrone",
   "Mixte",
 ];
 
-export const NIVEAUX: Niveau[] = ["Débutant", "Intermédiaire", "Avancé"];
+export const NIVEAUX: Niveau[] = [
+  "Débutant",
+  "Intermédiaire",
+  "Avancé",
+  "Débutant à avancé",
+];
 
 export const PHRASE_METHODES_PEDAGOGIQUES =
   "Afin de renforcer l'interactivité, l'intérêt des participants et la qualité des apprentissages, l'intervenant privilégie les méthodes pédagogiques suivantes :";
 
 export const VALEURS_DEFAUT = {
   modalitesAcces:
-    "Inscription : A l'issue d'un Audit de croissance (réservation), l'organisme produit un plan de formation qui vous permettra de faire une demande de financement auprès de votre OPCO. Accessible à tout public (y compris personnes en situation de handicap). Quand : toute l'année dans la limite des disponibilités. Les dates de formation sont définies par le stagiaire selon ses convenances.",
+    "Recueil des besoins réalisé par la conseillère formation, test de positionnement réalisé par le formateur et adaptation du parcours aux besoins et au parcours professionnel de la personne.",
   encadrement:
-    "La formation est assurée par Back to Business en mettant à disposition un formateur expérimenté dans son domaine et disponible selon les modalités et plages horaires préalablement définies.",
-  coordinationPedagogique:
-    "Ludovic ALBISSER, responsable pédagogique, sera en charge de l'apprenant dès l'entrée en formation et ce, tout le long du parcours pédagogique.",
+    "La formation est assurée par Formatrix en mettant à disposition un formateur expérimenté dans son domaine, disponible selon les modalités et plages horaires préalablement définies.",
   accompagnementPedagogique: [
-    "Questions sur les formations directement sur la plateforme et mise en contact avec un interlocuteur référent",
-    "Coordinateur pédagogique disponible par téléphone et/ou par email (délais de réponse par email sous 48h maximum, jours ouvrés)",
-    "Visioconférence prévue pendant la durée de la formation",
+    "L'apprenant reçoit une convocation dans laquelle l'ensemble des modalités selon la nature et le mode de formation choisis sont explicites.",
+    "Mise à disposition d'une adresse email pour poser des questions en cas de rupture de connexion.",
+    "Formulaire de réclamation",
   ],
   suivi:
     "Le suivi de la réalisation du stage sera justifié par la feuille d'émargement, le relevé de fréquentation ou de connexion.",

@@ -13,12 +13,6 @@ export const programmeSchema = z.object({
     .trim()
     .min(1, "Le titre est obligatoire")
     .max(200, "Le titre doit faire moins de 200 caractères"),
-  sousTitre: z
-    .string()
-    .trim()
-    .max(300, "Le sous-titre doit faire moins de 300 caractères")
-    .optional()
-    .or(z.literal("")),
   modeFormation: z.enum(MODES_FORMATION as [string, ...string[]]),
   plateforme: z
     .string()
@@ -50,7 +44,6 @@ export const programmeSchema = z.object({
   }),
   modalitesAcces: z.string().trim().max(2000),
   encadrement: z.string().trim().max(2000),
-  coordinationPedagogique: z.string().trim().max(2000),
   accompagnementPedagogique: z.array(z.string().trim().max(500)),
   suivi: z.string().trim().max(2000),
   modalitesEvaluation: z.array(z.string().trim().max(500)),
@@ -71,7 +64,6 @@ export type ProgrammeFormValues = z.input<typeof programmeSchema>;
 
 export const VALEURS_FORMULAIRE_DEFAUT: ProgrammeFormValues = {
   titre: "",
-  sousTitre: "",
   modeFormation: "Présentiel",
   plateforme: "",
   dureeHeures: "" as unknown as number,
@@ -81,7 +73,6 @@ export const VALEURS_FORMULAIRE_DEFAUT: ProgrammeFormValues = {
   niveau: "Débutant",
   modalitesAcces: VALEURS_DEFAUT.modalitesAcces,
   encadrement: VALEURS_DEFAUT.encadrement,
-  coordinationPedagogique: VALEURS_DEFAUT.coordinationPedagogique,
   accompagnementPedagogique: [...VALEURS_DEFAUT.accompagnementPedagogique],
   suivi: VALEURS_DEFAUT.suivi,
   modalitesEvaluation: [...VALEURS_DEFAUT.modalitesEvaluation],
