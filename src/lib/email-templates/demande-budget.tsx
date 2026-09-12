@@ -30,7 +30,7 @@ interface Props {
   commentaire?: string;
 }
 
-const Ligne = ({ label, valeur }: { label: string; valeur?: string }) =>
+const Ligne = ({ label, valeur }: { label: string; valeur?: string | undefined }) =>
   valeur ? (
     <Text style={ligne}>
       <span style={cle}>{label} : </span>

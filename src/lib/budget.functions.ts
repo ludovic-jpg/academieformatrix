@@ -32,7 +32,7 @@ export const notifierDemandeBudget = createServerFn({ method: "POST" })
       "ludovic@formatrix.fr",
       {
         idempotencyKey: `demande-budget-${demande.id}`,
-        replyTo: demande.contact_email || undefined,
+        ...(demande.contact_email ? { replyTo: demande.contact_email } : {}),
         templateData: {
           apprenantPrenom: demande.apprenant_prenom,
           apprenantNom: demande.apprenant_nom,
