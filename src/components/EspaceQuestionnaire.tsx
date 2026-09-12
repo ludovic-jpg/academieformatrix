@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProgrammeFormation } from "@/config/programme";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import {
   genererQuestionnaire,
   type QuestionQcm,
@@ -139,7 +140,7 @@ export function EspaceQuestionnaire({
       formation_id: formation.id,
       type,
       titre: `${intitule} — ${formation.titre}`,
-      questions: questions as unknown as Record<string, unknown>[],
+      questions: JSON.parse(JSON.stringify(questions)) as Json,
     });
     if (error) setErreur("L'enregistrement a échoué : " + error.message);
     else {
