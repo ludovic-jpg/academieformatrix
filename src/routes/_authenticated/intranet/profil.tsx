@@ -15,6 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { PhotoProfil } from "@/components/PhotoProfil";
+import { signalerPhotoProfilMiseAJour } from "@/hooks/usePhotoProfil";
 
 export const Route = createFileRoute("/_authenticated/intranet/profil")({
   component: Profil,
@@ -56,6 +58,31 @@ function Profil() {
   const [message, setMessage] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState<TypePiece | null>(null);
+  const [photoEnCours, setPhotoEnCours] = useState(false);
+
+  const deposerPhoto = async (fichier: File) => {
+    const { data: utilisateur } = await supabase.auth.getUser();
+    const user = utilisateur.user;
+    if (!user) return;
+    setPhotoEnCours(true);
+    setErreur(null);
+    const chemin = `${user.id}/photo-${Date.now()}-${fichier.name}`;
+    const { error: erreurUpload } = await supabase.storage
+      .from("avatars")
+      .upload(chemin, fichier, { upsert: true });
+    if (erreurUpload) {
+      setErreur("L'envoi de la photo a échoué : " + erreurUpload.message);
+      setPhotoEnCours(false);
+      return;
+    }
+    const { error } = await supabase
+      .from("profils_formateurs")
+      .update({ photo_url: chemin })
+      .eq("user_id", user.id);
+    if (error) setErreur("L'envoi de la photo a échoué : " + error.message);
+    else signalerPhotoProfilMiseAJour();
+    setPhotoEnCours(false);
+  };
 
   const charger = async () => {
     const { data: utilisateur } = await supabase.auth.getUser();
@@ -155,6 +182,36 @@ function Profil() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-primary">Photo de profil</CardTitle>
+          <CardDescription>
+            Elle apparaît dans tout votre espace formateur.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-4">
+          <PhotoProfil className="h-20 w-20" />
+          <div className="flex items-center gap-2">
+            <Input
+              type="file"
+              accept="image/*"
+              className="max-w-xs"
+              aria-label="Choisir une photo de profil"
+              onChange={(e) => {
+                const fichier = e.target.files?.[0];
+                if (fichier) void deposerPhoto(fichier);
+                e.target.value = "";
+              }}
+            />
+            {photoEnCours ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            ) : (
+              <Upload className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-primary">Coordonnées</CardTitle>
