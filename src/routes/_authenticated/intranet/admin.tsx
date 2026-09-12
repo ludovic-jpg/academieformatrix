@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/intranet/admin")({
@@ -27,6 +28,27 @@ interface Candidature {
   siret: string;
   statut: string;
   consentement: boolean;
+  created_at: string;
+}
+
+interface DemandeAdmin {
+  id: string;
+  apprenant_nom: string;
+  apprenant_prenom: string;
+  apprenant_email: string;
+  apprenant_telephone: string;
+  entreprise_nom: string;
+  entreprise_siret: string;
+  entreprise_adresse: string;
+  contact_nom: string;
+  contact_email: string;
+  formation_souhaitee: string;
+  periode: string;
+  nombre_heures: number;
+  budget_estime: number;
+  commentaire: string;
+  statut: string;
+  reponse: string;
   created_at: string;
 }
 
