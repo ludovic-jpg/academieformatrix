@@ -1,0 +1,26 @@
+import type { ProgrammeFormation } from "@/config/programme";
+
+/** Télécharge le programme au format PDF (charte Formatrix). */
+export async function telechargerProgrammePdf(programme: ProgrammeFormation) {
+  // La librairie PDF s'appuie sur Buffer pour décoder le logo.
+  const { Buffer } = await import("buffer");
+  const global = globalThis as unknown as { Buffer?: unknown };
+  if (!global.Buffer) global.Buffer = Buffer;
+  const [{ pdf }, { ProgrammePdf }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("@/lib/pdf/ProgrammePdf"),
+  ]);
+  const blob = await pdf(<ProgrammePdf programme={programme} />).toBlob();
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = `Programme - ${programme.titre}.pdf`;
+  lien.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Télécharge le programme au format Word (charte Formatrix). */
+export async function telechargerProgrammeWord(programme: ProgrammeFormation) {
+  const { genererWord } = await import("@/lib/word/generateWord");
+  await genererWord(programme);
+}

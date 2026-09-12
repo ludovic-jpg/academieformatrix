@@ -10,33 +10,187 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
+import { Route as AuthenticatedIntranetRouteRouteImport } from './routes/_authenticated/intranet/route'
+import { Route as PartageJetonRouteImport } from './routes/partage.$jeton'
+import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authenticated/intranet/index'
+import { Route as AuthenticatedIntranetAcquisRouteImport } from './routes/_authenticated/intranet/acquis'
+import { Route as AuthenticatedIntranetAdminRouteImport } from './routes/_authenticated/intranet/admin'
+import { Route as AuthenticatedIntranetCoffreRouteImport } from './routes/_authenticated/intranet/coffre'
+import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
+import { Route as AuthenticatedIntranetPositionnementRouteImport } from './routes/_authenticated/intranet/positionnement'
+import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PolitiqueConfidentialiteRoute =
+  PolitiqueConfidentialiteRouteImport.update({
+    id: '/politique-confidentialite',
+    path: '/politique-confidentialite',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedIntranetRouteRoute =
+  AuthenticatedIntranetRouteRouteImport.update({
+    id: '/intranet',
+    path: '/intranet',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const PartageJetonRoute = PartageJetonRouteImport.update({
+  id: '/partage/$jeton',
+  path: '/partage/$jeton',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIntranetIndexRoute =
+  AuthenticatedIntranetIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetAcquisRoute =
+  AuthenticatedIntranetAcquisRouteImport.update({
+    id: '/acquis',
+    path: '/acquis',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetAdminRoute =
+  AuthenticatedIntranetAdminRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetCoffreRoute =
+  AuthenticatedIntranetCoffreRouteImport.update({
+    id: '/coffre',
+    path: '/coffre',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetFormationsRoute =
+  AuthenticatedIntranetFormationsRouteImport.update({
+    id: '/formations',
+    path: '/formations',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetPositionnementRoute =
+  AuthenticatedIntranetPositionnementRouteImport.update({
+    id: '/positionnement',
+    path: '/positionnement',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetProfilRoute =
+  AuthenticatedIntranetProfilRouteImport.update({
+    id: '/profil',
+    path: '/profil',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/partage/$jeton': typeof PartageJetonRoute
+  '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
+  '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
+  '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
+  '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
+  '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
+  '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/partage/$jeton': typeof PartageJetonRoute
+  '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
+  '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
+  '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
+  '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
+  '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
+  '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/intranet': typeof AuthenticatedIntranetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/_authenticated/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/partage/$jeton': typeof PartageJetonRoute
+  '/_authenticated/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
+  '/_authenticated/intranet/admin': typeof AuthenticatedIntranetAdminRoute
+  '/_authenticated/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
+  '/_authenticated/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
+  '/_authenticated/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
+  '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/_authenticated/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/politique-confidentialite'
+    | '/intranet'
+    | '/partage/$jeton'
+    | '/intranet/acquis'
+    | '/intranet/admin'
+    | '/intranet/coffre'
+    | '/intranet/formations'
+    | '/intranet/positionnement'
+    | '/intranet/profil'
+    | '/intranet/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/politique-confidentialite'
+    | '/partage/$jeton'
+    | '/intranet/acquis'
+    | '/intranet/admin'
+    | '/intranet/coffre'
+    | '/intranet/formations'
+    | '/intranet/positionnement'
+    | '/intranet/profil'
+    | '/intranet'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/politique-confidentialite'
+    | '/_authenticated/intranet'
+    | '/partage/$jeton'
+    | '/_authenticated/intranet/acquis'
+    | '/_authenticated/intranet/admin'
+    | '/_authenticated/intranet/coffre'
+    | '/_authenticated/intranet/formations'
+    | '/_authenticated/intranet/positionnement'
+    | '/_authenticated/intranet/profil'
+    | '/_authenticated/intranet/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  PartageJetonRoute: typeof PartageJetonRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +202,137 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politique-confidentialite': {
+      id: '/politique-confidentialite'
+      path: '/politique-confidentialite'
+      fullPath: '/politique-confidentialite'
+      preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/intranet': {
+      id: '/_authenticated/intranet'
+      path: '/intranet'
+      fullPath: '/intranet'
+      preLoaderRoute: typeof AuthenticatedIntranetRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/partage/$jeton': {
+      id: '/partage/$jeton'
+      path: '/partage/$jeton'
+      fullPath: '/partage/$jeton'
+      preLoaderRoute: typeof PartageJetonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/intranet/': {
+      id: '/_authenticated/intranet/'
+      path: '/'
+      fullPath: '/intranet/'
+      preLoaderRoute: typeof AuthenticatedIntranetIndexRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/acquis': {
+      id: '/_authenticated/intranet/acquis'
+      path: '/acquis'
+      fullPath: '/intranet/acquis'
+      preLoaderRoute: typeof AuthenticatedIntranetAcquisRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/admin': {
+      id: '/_authenticated/intranet/admin'
+      path: '/admin'
+      fullPath: '/intranet/admin'
+      preLoaderRoute: typeof AuthenticatedIntranetAdminRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/coffre': {
+      id: '/_authenticated/intranet/coffre'
+      path: '/coffre'
+      fullPath: '/intranet/coffre'
+      preLoaderRoute: typeof AuthenticatedIntranetCoffreRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/formations': {
+      id: '/_authenticated/intranet/formations'
+      path: '/formations'
+      fullPath: '/intranet/formations'
+      preLoaderRoute: typeof AuthenticatedIntranetFormationsRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/positionnement': {
+      id: '/_authenticated/intranet/positionnement'
+      path: '/positionnement'
+      fullPath: '/intranet/positionnement'
+      preLoaderRoute: typeof AuthenticatedIntranetPositionnementRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/profil': {
+      id: '/_authenticated/intranet/profil'
+      path: '/profil'
+      fullPath: '/intranet/profil'
+      preLoaderRoute: typeof AuthenticatedIntranetProfilRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
   }
 }
 
+interface AuthenticatedIntranetRouteRouteChildren {
+  AuthenticatedIntranetAcquisRoute: typeof AuthenticatedIntranetAcquisRoute
+  AuthenticatedIntranetAdminRoute: typeof AuthenticatedIntranetAdminRoute
+  AuthenticatedIntranetCoffreRoute: typeof AuthenticatedIntranetCoffreRoute
+  AuthenticatedIntranetFormationsRoute: typeof AuthenticatedIntranetFormationsRoute
+  AuthenticatedIntranetPositionnementRoute: typeof AuthenticatedIntranetPositionnementRoute
+  AuthenticatedIntranetProfilRoute: typeof AuthenticatedIntranetProfilRoute
+  AuthenticatedIntranetIndexRoute: typeof AuthenticatedIntranetIndexRoute
+}
+
+const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteChildren =
+  {
+    AuthenticatedIntranetAcquisRoute: AuthenticatedIntranetAcquisRoute,
+    AuthenticatedIntranetAdminRoute: AuthenticatedIntranetAdminRoute,
+    AuthenticatedIntranetCoffreRoute: AuthenticatedIntranetCoffreRoute,
+    AuthenticatedIntranetFormationsRoute: AuthenticatedIntranetFormationsRoute,
+    AuthenticatedIntranetPositionnementRoute:
+      AuthenticatedIntranetPositionnementRoute,
+    AuthenticatedIntranetProfilRoute: AuthenticatedIntranetProfilRoute,
+    AuthenticatedIntranetIndexRoute: AuthenticatedIntranetIndexRoute,
+  }
+
+const AuthenticatedIntranetRouteRouteWithChildren =
+  AuthenticatedIntranetRouteRoute._addFileChildren(
+    AuthenticatedIntranetRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedIntranetRouteRoute: typeof AuthenticatedIntranetRouteRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedIntranetRouteRoute: AuthenticatedIntranetRouteRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
+  PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  PartageJetonRoute: PartageJetonRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
