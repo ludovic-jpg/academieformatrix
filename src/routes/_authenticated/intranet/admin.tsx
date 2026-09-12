@@ -72,6 +72,8 @@ function Administration() {
   const [autorise, setAutorise] = useState<boolean | null>(null);
   const [candidatures, setCandidatures] = useState<Candidature[]>([]);
   const [pieces, setPieces] = useState<PieceAdmin[]>([]);
+  const [demandes, setDemandes] = useState<DemandeAdmin[]>([]);
+  const [reponses, setReponses] = useState<Record<string, string>>({});
   const [chargement, setChargement] = useState(true);
 
   const charger = async () => {
@@ -100,7 +102,27 @@ function Administration() {
       .from("pieces_formateur")
       .select("id, formateur_id, type, nom_fichier, chemin");
     setPieces((piecesData ?? []) as unknown as PieceAdmin[]);
+
+    const { data: demandesData } = await supabase
+      .from("demandes_budget")
+      .select("*")
+      .order("created_at", { ascending: false });
+    const liste = (demandesData ?? []) as unknown as DemandeAdmin[];
+    setDemandes(liste);
+    setReponses(Object.fromEntries(liste.map((d) => [d.id, d.reponse ?? ""])));
     setChargement(false);
+  };
+
+  const repondre = async (demande: DemandeAdmin, statut: string) => {
+    await supabase
+      .from("demandes_budget")
+      .update({
+        reponse: reponses[demande.id] ?? "",
+        statut: statut as "nouvelle" | "en_cours" | "traitee",
+        repondu_at: new Date().toISOString(),
+      })
+      .eq("id", demande.id);
+    await charger();
   };
 
   useEffect(() => {
