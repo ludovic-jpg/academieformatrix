@@ -63,6 +63,8 @@ function Intranet() {
     };
   }, []);
 
+  const verrouille = statut !== null && statut !== "validee" && !estAdmin;
+
   const seDeconnecter = async () => {
     await queryClient.cancelQueries();
     queryClient.clear();
