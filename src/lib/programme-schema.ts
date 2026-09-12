@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   MODES_FORMATION,
   NIVEAUX,
-  VALEURS_DEFAUT,
+  RUBRIQUES_FIXES,
   type ProgrammeFormation,
 } from "@/config/programme";
 
@@ -42,14 +42,6 @@ export const programmeSchema = z.object({
   niveau: z.enum(NIVEAUX as [string, ...string[]], {
     error: "Le niveau est obligatoire",
   }),
-  modalitesAcces: z.string().trim().max(2000),
-  encadrement: z.string().trim().max(2000),
-  accompagnementPedagogique: z.array(z.string().trim().max(500)),
-  suivi: z.string().trim().max(2000),
-  modalitesEvaluation: z.array(z.string().trim().max(500)),
-  validationFormation: z.string().trim().max(1000),
-  methodesPedagogiques: z.array(z.string().trim().max(500)),
-  moyensPedagogiques: z.array(z.string().trim().max(500)),
   // Champs remplis par l'IA, modifiables ensuite par l'utilisateur
   objectifsPedagogiques: z.array(z.string().trim().max(500)),
   modules: z.array(
@@ -71,14 +63,6 @@ export const VALEURS_FORMULAIRE_DEFAUT: ProgrammeFormValues = {
   publicConcerne: "",
   prerequis: "",
   niveau: "Débutant",
-  modalitesAcces: VALEURS_DEFAUT.modalitesAcces,
-  encadrement: VALEURS_DEFAUT.encadrement,
-  accompagnementPedagogique: [...VALEURS_DEFAUT.accompagnementPedagogique],
-  suivi: VALEURS_DEFAUT.suivi,
-  modalitesEvaluation: [...VALEURS_DEFAUT.modalitesEvaluation],
-  validationFormation: VALEURS_DEFAUT.validationFormation,
-  methodesPedagogiques: [...VALEURS_DEFAUT.methodesPedagogiques],
-  moyensPedagogiques: [...VALEURS_DEFAUT.moyensPedagogiques],
   objectifsPedagogiques: [],
   modules: [],
 };
@@ -89,6 +73,7 @@ export function versProgrammeFormation(
 ): ProgrammeFormation {
   return {
     ...valeurs,
+    ...RUBRIQUES_FIXES,
     modeFormation: valeurs.modeFormation as ProgrammeFormation["modeFormation"],
     niveau: valeurs.niveau as ProgrammeFormation["niveau"],
   };
