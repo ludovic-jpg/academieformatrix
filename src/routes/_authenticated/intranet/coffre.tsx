@@ -102,8 +102,17 @@ function Coffre() {
     if (!formationId) return;
     setEnvoi(true);
     setErreur(null);
+    if (fichier.size > 50 * 1024 * 1024) {
+      setErreur("Ce fichier dépasse 50 Mo : réduisez-le avant de le déposer.");
+      setEnvoi(false);
+      return;
+    }
     const { data: utilisateur } = await supabase.auth.getUser();
-    if (!utilisateur.user) return;
+    if (!utilisateur.user) {
+      setErreur("Votre session a expiré, reconnectez-vous puis réessayez.");
+      setEnvoi(false);
+      return;
+    }
     const chemin = `${utilisateur.user.id}/${formationId}/${Date.now()}-${nomFichierSur(fichier.name)}`;
     const { error: erreurUpload } = await supabase.storage
       .from("coffre")

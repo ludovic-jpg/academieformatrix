@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      apprenants: {
+        Row: {
+          apprenant_email: string
+          apprenant_nom: string
+          apprenant_prenom: string
+          apprenant_telephone: string
+          contact_email: string
+          contact_nom: string
+          created_at: string
+          entreprise_adresse: string
+          entreprise_nom: string
+          entreprise_siret: string
+          formateur_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_email?: string
+          apprenant_nom?: string
+          apprenant_prenom?: string
+          apprenant_telephone?: string
+          contact_email?: string
+          contact_nom?: string
+          created_at?: string
+          entreprise_adresse?: string
+          entreprise_nom?: string
+          entreprise_siret?: string
+          formateur_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_email?: string
+          apprenant_nom?: string
+          apprenant_prenom?: string
+          apprenant_telephone?: string
+          contact_email?: string
+          contact_nom?: string
+          created_at?: string
+          entreprise_adresse?: string
+          entreprise_nom?: string
+          entreprise_siret?: string
+          formateur_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coffre_fichiers: {
         Row: {
           chemin: string
@@ -55,9 +103,11 @@ export type Database = {
       demandes_budget: {
         Row: {
           apprenant_email: string
+          apprenant_id: string | null
           apprenant_nom: string
           apprenant_prenom: string
           apprenant_telephone: string
+          archivee: boolean
           budget_estime: number
           commentaire: string
           contact_email: string
@@ -74,13 +124,16 @@ export type Database = {
           repondu_at: string | null
           reponse: string
           statut: Database["public"]["Enums"]["statut_demande"]
+          type_demande: string
           updated_at: string
         }
         Insert: {
           apprenant_email?: string
+          apprenant_id?: string | null
           apprenant_nom?: string
           apprenant_prenom?: string
           apprenant_telephone?: string
+          archivee?: boolean
           budget_estime?: number
           commentaire?: string
           contact_email?: string
@@ -97,13 +150,16 @@ export type Database = {
           repondu_at?: string | null
           reponse?: string
           statut?: Database["public"]["Enums"]["statut_demande"]
+          type_demande?: string
           updated_at?: string
         }
         Update: {
           apprenant_email?: string
+          apprenant_id?: string | null
           apprenant_nom?: string
           apprenant_prenom?: string
           apprenant_telephone?: string
+          archivee?: boolean
           budget_estime?: number
           commentaire?: string
           contact_email?: string
@@ -120,9 +176,18 @@ export type Database = {
           repondu_at?: string | null
           reponse?: string
           statut?: Database["public"]["Enums"]["statut_demande"]
+          type_demande?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "demandes_budget_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       formations: {
         Row: {
