@@ -25,6 +25,7 @@ import { Route as AuthenticatedIntranetDemandeFormationRouteImport } from './rou
 import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
 import { Route as AuthenticatedIntranetPositionnementRouteImport } from './routes/_authenticated/intranet/positionnement'
 import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
+import { Route as AuthenticatedIntranetSupportsRouteImport } from './routes/_authenticated/intranet/supports'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -117,6 +118,12 @@ const AuthenticatedIntranetProfilRoute =
     path: '/profil',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
+const AuthenticatedIntranetSupportsRoute =
+  AuthenticatedIntranetSupportsRouteImport.update({
+    id: '/supports',
+    path: '/supports',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -139,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/intranet/supports': typeof AuthenticatedIntranetSupportsRoute
   '/intranet/': typeof AuthenticatedIntranetIndexRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/intranet/supports': typeof AuthenticatedIntranetSupportsRoute
   '/intranet': typeof AuthenticatedIntranetIndexRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -176,6 +185,7 @@ export interface FileRoutesById {
   '/_authenticated/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/_authenticated/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
+  '/_authenticated/intranet/supports': typeof AuthenticatedIntranetSupportsRoute
   '/_authenticated/intranet/': typeof AuthenticatedIntranetIndexRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/intranet/formations'
     | '/intranet/positionnement'
     | '/intranet/profil'
+    | '/intranet/supports'
     | '/intranet/'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/intranet/formations'
     | '/intranet/positionnement'
     | '/intranet/profil'
+    | '/intranet/supports'
     | '/intranet'
     | '/lovable/email/transactional/preview'
   id:
@@ -232,6 +244,7 @@ export interface FileRouteTypes {
     | '/_authenticated/intranet/formations'
     | '/_authenticated/intranet/positionnement'
     | '/_authenticated/intranet/profil'
+    | '/_authenticated/intranet/supports'
     | '/_authenticated/intranet/'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
@@ -360,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetProfilRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
+    '/_authenticated/intranet/supports': {
+      id: '/_authenticated/intranet/supports'
+      path: '/supports'
+      fullPath: '/intranet/supports'
+      preLoaderRoute: typeof AuthenticatedIntranetSupportsRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -379,6 +399,7 @@ interface AuthenticatedIntranetRouteRouteChildren {
   AuthenticatedIntranetFormationsRoute: typeof AuthenticatedIntranetFormationsRoute
   AuthenticatedIntranetPositionnementRoute: typeof AuthenticatedIntranetPositionnementRoute
   AuthenticatedIntranetProfilRoute: typeof AuthenticatedIntranetProfilRoute
+  AuthenticatedIntranetSupportsRoute: typeof AuthenticatedIntranetSupportsRoute
   AuthenticatedIntranetIndexRoute: typeof AuthenticatedIntranetIndexRoute
 }
 
@@ -394,6 +415,7 @@ const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteCh
     AuthenticatedIntranetPositionnementRoute:
       AuthenticatedIntranetPositionnementRoute,
     AuthenticatedIntranetProfilRoute: AuthenticatedIntranetProfilRoute,
+    AuthenticatedIntranetSupportsRoute: AuthenticatedIntranetSupportsRoute,
     AuthenticatedIntranetIndexRoute: AuthenticatedIntranetIndexRoute,
   }
 
