@@ -14,8 +14,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as AuthenticatedIntranetRouteRouteImport } from './routes/_authenticated/intranet/route'
+import { Route as PartageJetonRouteImport } from './routes/partage.$jeton'
 import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authenticated/intranet/index'
+import { Route as AuthenticatedIntranetAcquisRouteImport } from './routes/_authenticated/intranet/acquis'
+import { Route as AuthenticatedIntranetCoffreRouteImport } from './routes/_authenticated/intranet/coffre'
 import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
+import { Route as AuthenticatedIntranetPositionnementRouteImport } from './routes/_authenticated/intranet/positionnement'
 import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
 
 const IndexRoute = IndexRouteImport.update({
@@ -44,16 +48,39 @@ const AuthenticatedIntranetRouteRoute =
     path: '/intranet',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const PartageJetonRoute = PartageJetonRouteImport.update({
+  id: '/partage/$jeton',
+  path: '/partage/$jeton',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedIntranetIndexRoute =
   AuthenticatedIntranetIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
+const AuthenticatedIntranetAcquisRoute =
+  AuthenticatedIntranetAcquisRouteImport.update({
+    id: '/acquis',
+    path: '/acquis',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetCoffreRoute =
+  AuthenticatedIntranetCoffreRouteImport.update({
+    id: '/coffre',
+    path: '/coffre',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
 const AuthenticatedIntranetFormationsRoute =
   AuthenticatedIntranetFormationsRouteImport.update({
     id: '/formations',
     path: '/formations',
+    getParentRoute: () => AuthenticatedIntranetRouteRoute,
+  } as any)
+const AuthenticatedIntranetPositionnementRoute =
+  AuthenticatedIntranetPositionnementRouteImport.update({
+    id: '/positionnement',
+    path: '/positionnement',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
 const AuthenticatedIntranetProfilRoute =
@@ -68,7 +95,11 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/partage/$jeton': typeof PartageJetonRoute
+  '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
+  '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
+  '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
@@ -76,7 +107,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/partage/$jeton': typeof PartageJetonRoute
+  '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
+  '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
+  '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/intranet': typeof AuthenticatedIntranetIndexRoute
 }
@@ -87,7 +122,11 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/_authenticated/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/partage/$jeton': typeof PartageJetonRoute
+  '/_authenticated/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
+  '/_authenticated/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
   '/_authenticated/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
+  '/_authenticated/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/_authenticated/intranet/': typeof AuthenticatedIntranetIndexRoute
 }
@@ -98,7 +137,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/politique-confidentialite'
     | '/intranet'
+    | '/partage/$jeton'
+    | '/intranet/acquis'
+    | '/intranet/coffre'
     | '/intranet/formations'
+    | '/intranet/positionnement'
     | '/intranet/profil'
     | '/intranet/'
   fileRoutesByTo: FileRoutesByTo
@@ -106,7 +149,11 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/politique-confidentialite'
+    | '/partage/$jeton'
+    | '/intranet/acquis'
+    | '/intranet/coffre'
     | '/intranet/formations'
+    | '/intranet/positionnement'
     | '/intranet/profil'
     | '/intranet'
   id:
@@ -116,7 +163,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/politique-confidentialite'
     | '/_authenticated/intranet'
+    | '/partage/$jeton'
+    | '/_authenticated/intranet/acquis'
+    | '/_authenticated/intranet/coffre'
     | '/_authenticated/intranet/formations'
+    | '/_authenticated/intranet/positionnement'
     | '/_authenticated/intranet/profil'
     | '/_authenticated/intranet/'
   fileRoutesById: FileRoutesById
@@ -126,6 +177,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  PartageJetonRoute: typeof PartageJetonRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/partage/$jeton': {
+      id: '/partage/$jeton'
+      path: '/partage/$jeton'
+      fullPath: '/partage/$jeton'
+      preLoaderRoute: typeof PartageJetonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/intranet/': {
       id: '/_authenticated/intranet/'
       path: '/'
@@ -172,11 +231,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetIndexRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
+    '/_authenticated/intranet/acquis': {
+      id: '/_authenticated/intranet/acquis'
+      path: '/acquis'
+      fullPath: '/intranet/acquis'
+      preLoaderRoute: typeof AuthenticatedIntranetAcquisRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/coffre': {
+      id: '/_authenticated/intranet/coffre'
+      path: '/coffre'
+      fullPath: '/intranet/coffre'
+      preLoaderRoute: typeof AuthenticatedIntranetCoffreRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
     '/_authenticated/intranet/formations': {
       id: '/_authenticated/intranet/formations'
       path: '/formations'
       fullPath: '/intranet/formations'
       preLoaderRoute: typeof AuthenticatedIntranetFormationsRouteImport
+      parentRoute: typeof AuthenticatedIntranetRouteRoute
+    }
+    '/_authenticated/intranet/positionnement': {
+      id: '/_authenticated/intranet/positionnement'
+      path: '/positionnement'
+      fullPath: '/intranet/positionnement'
+      preLoaderRoute: typeof AuthenticatedIntranetPositionnementRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
     '/_authenticated/intranet/profil': {
@@ -190,14 +270,21 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedIntranetRouteRouteChildren {
+  AuthenticatedIntranetAcquisRoute: typeof AuthenticatedIntranetAcquisRoute
+  AuthenticatedIntranetCoffreRoute: typeof AuthenticatedIntranetCoffreRoute
   AuthenticatedIntranetFormationsRoute: typeof AuthenticatedIntranetFormationsRoute
+  AuthenticatedIntranetPositionnementRoute: typeof AuthenticatedIntranetPositionnementRoute
   AuthenticatedIntranetProfilRoute: typeof AuthenticatedIntranetProfilRoute
   AuthenticatedIntranetIndexRoute: typeof AuthenticatedIntranetIndexRoute
 }
 
 const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteChildren =
   {
+    AuthenticatedIntranetAcquisRoute: AuthenticatedIntranetAcquisRoute,
+    AuthenticatedIntranetCoffreRoute: AuthenticatedIntranetCoffreRoute,
     AuthenticatedIntranetFormationsRoute: AuthenticatedIntranetFormationsRoute,
+    AuthenticatedIntranetPositionnementRoute:
+      AuthenticatedIntranetPositionnementRoute,
     AuthenticatedIntranetProfilRoute: AuthenticatedIntranetProfilRoute,
     AuthenticatedIntranetIndexRoute: AuthenticatedIntranetIndexRoute,
   }
@@ -223,6 +310,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  PartageJetonRoute: PartageJetonRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
