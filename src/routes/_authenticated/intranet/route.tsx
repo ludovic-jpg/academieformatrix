@@ -24,6 +24,7 @@ const ONGLETS = [
   { to: "/intranet/acquis", label: "Évaluation des Acquis" },
   { to: "/intranet/coffre", label: "Coffre-fort pédagogique" },
   { to: "/intranet/budget", label: "Demande de budget" },
+  { to: "/intranet/demande-formation", label: "Demande de formation" },
 ] as const;
 
 function Intranet() {
