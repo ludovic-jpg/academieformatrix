@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, Loader2, Save, Sparkles, Trash2 } from "lucide-react";
+import { Download, Eye, Loader2, Save, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,7 @@ import {
   genererQuestionnaire,
   type QuestionQcm,
 } from "@/lib/questionnaire.functions";
+import { telechargerQuestionnairePdf } from "@/lib/documents";
 
 interface Formation {
   id: string;
