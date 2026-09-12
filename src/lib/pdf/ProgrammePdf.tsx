@@ -76,12 +76,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textTransform: "uppercase",
   },
-  sousTitreFormation: {
-    color: BLEU,
-    fontSize: 9,
-    textAlign: "center",
-    marginTop: 2,
-  },
   programmeDetaille: {
     color: BLEU,
     fontWeight: 700,
@@ -132,9 +126,6 @@ function Entete({ programme }: { programme: ProgrammeFormation }) {
       </View>
       <View style={styles.encadre}>
         <Text style={styles.titreFormation}>{programme.titre}</Text>
-        {programme.sousTitre ? (
-          <Text style={styles.sousTitreFormation}>{programme.sousTitre}</Text>
-        ) : null}
         <Text style={styles.programmeDetaille}>Programme Détaillé</Text>
       </View>
     </View>
@@ -255,12 +246,6 @@ export function ProgrammePdf({
 
         <Section titre="Encadrement">
           <Text style={styles.paragraphe}>{programme.encadrement}</Text>
-        </Section>
-
-        <Section titre="Coordination pédagogique">
-          <Text style={styles.paragraphe}>
-            {programme.coordinationPedagogique}
-          </Text>
         </Section>
 
         <Section titre="Accompagnement pédagogique">

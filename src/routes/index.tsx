@@ -326,18 +326,6 @@ function Index() {
                   {...register("titre")}
                 />
               </Champ>
-              <Champ
-                id="sous-titre"
-                label="Sous-titre (optionnel)"
-                erreur={errors.sousTitre?.message}
-              >
-                <Input
-                  id="sous-titre"
-                  placeholder="Ex. : Construire un plan d'action commercial efficace"
-                  aria-invalid={!!errors.sousTitre}
-                  {...register("sousTitre")}
-                />
-              </Champ>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Champ id="mode-formation" label="Mode de formation">
                   <Controller
@@ -513,17 +501,6 @@ function Index() {
                   id="encadrement"
                   rows={3}
                   {...register("encadrement")}
-                />
-              </Champ>
-              <Champ
-                id="coordination"
-                label="Coordination pédagogique"
-                erreur={errors.coordinationPedagogique?.message}
-              >
-                <Textarea
-                  id="coordination"
-                  rows={3}
-                  {...register("coordinationPedagogique")}
                 />
               </Champ>
               <Controller

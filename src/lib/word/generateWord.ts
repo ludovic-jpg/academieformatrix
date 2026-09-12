@@ -118,13 +118,12 @@ function construireEntete(
   }
 
   // Encadré du titre : bordures réparties sur les paragraphes du bloc.
-  const lignes: { texte: string; style: Partial<{ bold: boolean; size: number; caps: boolean }> }[] =
-    [
-      { texte: programme.titre.toUpperCase(), style: { bold: true, size: 26 } },
-    ];
-  if (programme.sousTitre) {
-    lignes.push({ texte: programme.sousTitre, style: { size: 18 } });
-  }
+  const lignes: {
+    texte: string;
+    style: Partial<{ bold: boolean; size: number; caps: boolean }>;
+  }[] = [
+    { texte: programme.titre.toUpperCase(), style: { bold: true, size: 26 } },
+  ];
   lignes.push({ texte: "Programme Détaillé", style: { bold: true, size: 20 } });
 
   lignes.forEach((ligne, index) => {
@@ -196,9 +195,6 @@ function construireCorps(programme: ProgrammeFormation): Paragraph[] {
     ...section("Objectifs pédagogiques", puces(programme.objectifsPedagogiques)),
     ...section("Modalités d'accès", [paragrapheTexte(programme.modalitesAcces)]),
     ...section("Encadrement", [paragrapheTexte(programme.encadrement)]),
-    ...section("Coordination pédagogique", [
-      paragrapheTexte(programme.coordinationPedagogique),
-    ]),
     ...section(
       "Accompagnement pédagogique",
       puces(programme.accompagnementPedagogique),
