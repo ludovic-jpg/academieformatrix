@@ -313,15 +313,26 @@ function Profil() {
                       className="flex items-center justify-between gap-2 text-xs text-muted-foreground"
                     >
                       <span className="truncate">{fichier.nom_fichier}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Supprimer ${fichier.nom_fichier}`}
-                        onClick={() => void supprimerPiece(fichier)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <span className="flex shrink-0 items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void consulterPiece(fichier)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Consulter
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Supprimer ${fichier.nom_fichier}`}
+                          onClick={() => void supprimerPiece(fichier)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </span>
                     </li>
                   ))}
                 </ul>
