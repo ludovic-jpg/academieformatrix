@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { notifierDemandeBudget } from "@/lib/budget.functions";
 
 export const Route = createFileRoute("/_authenticated/intranet/budget")({
   component: DemandeBudget,
@@ -98,16 +99,27 @@ function DemandeBudget() {
     setEnvoi(true);
     setErreur(null);
     setMessage(null);
-    const { error } = await supabase.from("demandes_budget").insert({
-      formateur_id: utilisateur.user.id,
-      ...form,
-      nombre_heures: Number(nombreHeures) || 0,
-      budget_estime: Number(budget) || 0,
-      commentaire,
-    });
+    const { data: creee, error } = await supabase
+      .from("demandes_budget")
+      .insert({
+        formateur_id: utilisateur.user.id,
+        ...form,
+        nombre_heures: Number(nombreHeures) || 0,
+        budget_estime: Number(budget) || 0,
+        commentaire,
+      })
+      .select("id")
+      .single();
     if (error) {
       setErreur("L'envoi a échoué : " + error.message);
     } else {
+      try {
+        if (creee?.id) {
+          await notifierDemandeBudget({ data: { demandeId: creee.id } });
+        }
+      } catch (e) {
+        console.error("Notification de demande de budget non envoyée", e);
+      }
       setMessage(
         "Votre demande a été transmise à l'administration Formatrix. Vous recevrez une réponse dans cet onglet.",
       );

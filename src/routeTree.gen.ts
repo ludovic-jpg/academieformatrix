@@ -23,6 +23,7 @@ import { Route as AuthenticatedIntranetCoffreRouteImport } from './routes/_authe
 import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
 import { Route as AuthenticatedIntranetPositionnementRouteImport } from './routes/_authenticated/intranet/positionnement'
 import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -103,6 +104,12 @@ const AuthenticatedIntranetProfilRoute =
     path: '/profil',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/intranet/': typeof AuthenticatedIntranetIndexRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,6 +140,7 @@ export interface FileRoutesByTo {
   '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/intranet': typeof AuthenticatedIntranetIndexRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -149,6 +158,7 @@ export interface FileRoutesById {
   '/_authenticated/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
   '/_authenticated/intranet/': typeof AuthenticatedIntranetIndexRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/intranet/positionnement'
     | '/intranet/profil'
     | '/intranet/'
+    | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/intranet/positionnement'
     | '/intranet/profil'
     | '/intranet'
+    | '/lovable/email/transactional/preview'
   id:
     | '__root__'
     | '/'
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
     | '/_authenticated/intranet/positionnement'
     | '/_authenticated/intranet/profil'
     | '/_authenticated/intranet/'
+    | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,6 +217,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
   PartageJetonRoute: typeof PartageJetonRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -306,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetProfilRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -355,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
   PartageJetonRoute: PartageJetonRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
