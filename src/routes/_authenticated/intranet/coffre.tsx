@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { nomFichierSur } from "@/lib/storage";
+import { DossiersApprenants } from "@/components/DossiersApprenants";
 
 export const Route = createFileRoute("/_authenticated/intranet/coffre")({
   component: Coffre,
@@ -44,6 +45,12 @@ interface Partage {
   actif: boolean;
 }
 
+interface Questionnaire {
+  id: string;
+  type: "positionnement" | "acquis";
+  titre: string;
+}
+
 function jetonAleatoire() {
   const octets = new Uint8Array(24);
   crypto.getRandomValues(octets);
@@ -57,6 +64,7 @@ function Coffre() {
   const [formationId, setFormationId] = useState("");
   const [fichiers, setFichiers] = useState<Fichier[]>([]);
   const [partage, setPartage] = useState<Partage | null>(null);
+  const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [copie, setCopie] = useState(false);
@@ -82,12 +90,37 @@ function Coffre() {
       .order("created_at", { ascending: true });
     setFichiers((fichiersData ?? []) as unknown as Fichier[]);
 
-    const { data: partageData } = await supabase
+    const { data: questionnairesData } = await supabase
+      .from("questionnaires")
+      .select("id, type, titre")
+      .eq("formation_id", id)
+      .order("created_at", { ascending: false });
+    setQuestionnaires((questionnairesData ?? []) as Questionnaire[]);
+
+    let { data: partageData } = await supabase
       .from("partages_coffre")
       .select("id, jeton, actif")
       .eq("formation_id", id)
       .eq("actif", true)
       .maybeSingle();
+
+    // Le coffre-fort est immédiatement partageable dès qu'une formation est
+    // choisie : le lien est créé automatiquement s'il n'existe pas encore.
+    if (!partageData) {
+      const { data: utilisateur } = await supabase.auth.getUser();
+      if (utilisateur.user) {
+        const { data: cree } = await supabase
+          .from("partages_coffre")
+          .insert({
+            formateur_id: utilisateur.user.id,
+            formation_id: id,
+            jeton: jetonAleatoire(),
+          })
+          .select("id, jeton, actif")
+          .maybeSingle();
+        partageData = cree ?? null;
+      }
+    }
     setPartage((partageData ?? null) as Partage | null);
   };
 
@@ -241,6 +274,34 @@ function Coffre() {
                   </p>
                 )}
               </ul>
+
+              <div className="rounded-md border p-4">
+                <p className="text-sm font-bold text-primary">
+                  Documents rattachés automatiquement
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  <li>Recueil des besoins pré-formation</li>
+                  {(["positionnement", "acquis"] as const).map((type) => {
+                    const q = questionnaires.find((item) => item.type === type);
+                    const libelle =
+                      type === "positionnement"
+                        ? "Test de positionnement"
+                        : "Évaluation des acquis";
+                    return (
+                      <li key={type}>
+                        {libelle} :{" "}
+                        {q ? (
+                          <span className="font-medium text-primary">
+                            {q.titre}
+                          </span>
+                        ) : (
+                          "à générer dans l'onglet dédié"
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             </>
           )}
 
@@ -291,6 +352,8 @@ function Coffre() {
           </CardContent>
         </Card>
       )}
+
+      {formationId && <DossiersApprenants formationId={formationId} />}
     </div>
   );
 }
