@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Download, Loader2, Sparkles } from "lucide-react";
+import { Download, Eye, Layers, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -72,6 +72,13 @@ interface SupportGenere {
   nom: string;
   pptx: Blob;
   pdf: Blob;
+}
+
+interface FichierSupport {
+  id: string;
+  nom: string;
+  chemin: string;
+  created_at: string;
 }
 
 const PARTIES = ["theorie", "exercices"] as const;
