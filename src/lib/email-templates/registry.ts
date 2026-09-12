@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 
 import { template as demandeBudgetTemplate } from './demande-budget'
+import { template as workflowApprenantTemplate } from './workflow-apprenant'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -17,4 +18,5 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'demande-budget': demandeBudgetTemplate,
+  'workflow-apprenant': workflowApprenantTemplate,
 }

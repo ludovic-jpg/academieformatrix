@@ -189,6 +189,95 @@ export type Database = {
           },
         ]
       }
+      documents_dossier: {
+        Row: {
+          chemin: string
+          created_at: string
+          dossier_id: string
+          formateur_id: string
+          id: string
+          nom: string
+          taille: number
+          type: string
+        }
+        Insert: {
+          chemin: string
+          created_at?: string
+          dossier_id: string
+          formateur_id: string
+          id?: string
+          nom: string
+          taille?: number
+          type?: string
+        }
+        Update: {
+          chemin?: string
+          created_at?: string
+          dossier_id?: string
+          formateur_id?: string
+          id?: string
+          nom?: string
+          taille?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_dossier_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_apprenant"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dossiers_apprenant: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          etape: Database["public"]["Enums"]["etape_workflow"]
+          formateur_id: string
+          formation_id: string
+          id: string
+          jeton: string
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          etape?: Database["public"]["Enums"]["etape_workflow"]
+          formateur_id: string
+          formation_id: string
+          id?: string
+          jeton: string
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          etape?: Database["public"]["Enums"]["etape_workflow"]
+          formateur_id?: string
+          formation_id?: string
+          id?: string
+          jeton?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dossiers_apprenant_apprenant_id_fkey"
+            columns: ["apprenant_id"]
+            isOneToOne: false
+            referencedRelation: "apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dossiers_apprenant_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formations: {
         Row: {
           created_at: string
@@ -376,6 +465,44 @@ export type Database = {
           },
         ]
       }
+      reponses_recueil: {
+        Row: {
+          created_at: string
+          dossier_id: string
+          formateur_id: string
+          id: string
+          reponses: Json
+          soumis_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dossier_id: string
+          formateur_id: string
+          id?: string
+          reponses?: Json
+          soumis_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dossier_id?: string
+          formateur_id?: string
+          id?: string
+          reponses?: Json
+          soumis_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reponses_recueil_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: true
+            referencedRelation: "dossiers_apprenant"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -412,6 +539,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "formateur"
+      etape_workflow:
+        | "positionnement"
+        | "financement"
+        | "realisation"
+        | "finalisation"
       statut_candidature: "en_attente" | "validee" | "refusee"
       statut_demande: "nouvelle" | "en_cours" | "traitee"
       type_piece: "cv" | "diplome" | "identite" | "casier" | "autre"
@@ -544,6 +676,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "formateur"],
+      etape_workflow: [
+        "positionnement",
+        "financement",
+        "realisation",
+        "finalisation",
+      ],
       statut_candidature: ["en_attente", "validee", "refusee"],
       statut_demande: ["nouvelle", "en_cours", "traitee"],
       type_piece: ["cv", "diplome", "identite", "casier", "autre"],

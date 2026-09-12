@@ -2,6 +2,7 @@ import {
   createFileRoute,
   Link,
   Outlet,
+  useLocation,
   useNavigate,
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,9 +30,11 @@ const ONGLETS = [
 
 function Intranet() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [estAdmin, setEstAdmin] = useState(false);
   const [prenom, setPrenom] = useState("");
+  const [statut, setStatut] = useState<string | null>(null);
 
   useEffect(() => {
     let annule = false;
@@ -47,15 +50,20 @@ function Intranet() {
       if (!annule) setEstAdmin(!!data);
       const { data: profil } = await supabase
         .from("profils_formateurs")
-        .select("prenom")
+        .select("prenom, statut")
         .eq("user_id", utilisateur.user.id)
         .maybeSingle();
-      if (!annule) setPrenom(profil?.prenom ?? "");
+      if (!annule) {
+        setPrenom(profil?.prenom ?? "");
+        setStatut(profil?.statut ?? "en_attente");
+      }
     })();
     return () => {
       annule = true;
     };
   }, []);
+
+  const verrouille = statut !== null && statut !== "validee" && !estAdmin;
 
   const seDeconnecter = async () => {
     await queryClient.cancelQueries();
@@ -86,19 +94,30 @@ function Intranet() {
         </div>
 
         <nav className="mt-8 flex flex-wrap gap-2 border-b pb-2">
-          {ONGLETS.map((onglet) => (
-            <Link
-              key={onglet.to}
-              to={onglet.to}
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
-              activeProps={{
-                className:
-                  "rounded-md px-3 py-2 text-sm font-bold text-primary bg-accent",
-              }}
-            >
-              {onglet.label}
-            </Link>
-          ))}
+          {ONGLETS.map((onglet) =>
+            verrouille && onglet.to !== "/intranet/profil" ? (
+              <span
+                key={onglet.to}
+                aria-disabled="true"
+                title="Disponible une fois votre candidature validée"
+                className="cursor-not-allowed rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/50"
+              >
+                {onglet.label}
+              </span>
+            ) : (
+              <Link
+                key={onglet.to}
+                to={onglet.to}
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
+                activeProps={{
+                  className:
+                    "rounded-md px-3 py-2 text-sm font-bold text-primary bg-accent",
+                }}
+              >
+                {onglet.label}
+              </Link>
+            ),
+          )}
           {estAdmin && (
             <Link
               to="/intranet/admin"
@@ -114,7 +133,22 @@ function Intranet() {
         </nav>
 
         <div className="mt-8">
-          <Outlet />
+          {verrouille && !location.pathname.startsWith("/intranet/profil") ? (
+            <div className="rounded-md border p-6">
+              <p className="text-sm font-bold text-primary">
+                {statut === "refusee"
+                  ? "Votre candidature n'a pas été retenue."
+                  : "Votre candidature est en cours de validation."}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {statut === "refusee"
+                  ? "Les outils de l'espace formateur ne sont plus accessibles. Contactez Formatrix pour toute question."
+                  : "Complétez votre profil et déposez vos pièces justificatives. Les autres outils s'ouvriront dès la validation."}
+              </p>
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </div>
     </div>

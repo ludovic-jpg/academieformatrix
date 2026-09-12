@@ -54,3 +54,26 @@ export async function telechargerQuestionnairePdf(questionnaire: {
   lien.click();
   URL.revokeObjectURL(url);
 }
+
+/** Télécharge le recueil des besoins (vierge ou pré-rempli) au format PDF. */
+export async function telechargerRecueilPdf(
+  infos: import("@/lib/pdf/RecueilPdf").InfosRecueil,
+  reponses?: Record<string, string>,
+) {
+  const { Buffer } = await import("buffer");
+  const global = globalThis as unknown as { Buffer?: unknown };
+  if (!global.Buffer) global.Buffer = Buffer;
+  const [{ pdf }, { RecueilPdf }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("@/lib/pdf/RecueilPdf"),
+  ]);
+  const blob = await pdf(
+    <RecueilPdf infos={infos} {...(reponses ? { reponses } : {})} />,
+  ).toBlob();
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = `Recueil des besoins - ${infos.nomStagiaire || "apprenant"}.pdf`;
+  lien.click();
+  URL.revokeObjectURL(url);
+}

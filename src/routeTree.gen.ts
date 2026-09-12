@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as AuthenticatedIntranetRouteRouteImport } from './routes/_authenticated/intranet/route'
+import { Route as DossierJetonRouteImport } from './routes/dossier.$jeton'
 import { Route as PartageJetonRouteImport } from './routes/partage.$jeton'
 import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authenticated/intranet/index'
 import { Route as AuthenticatedIntranetAcquisRouteImport } from './routes/_authenticated/intranet/acquis'
@@ -52,6 +53,11 @@ const AuthenticatedIntranetRouteRoute =
     path: '/intranet',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const DossierJetonRoute = DossierJetonRouteImport.update({
+  id: '/dossier/$jeton',
+  path: '/dossier/$jeton',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PartageJetonRoute = PartageJetonRouteImport.update({
   id: '/partage/$jeton',
   path: '/partage/$jeton',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/dossier/$jeton': typeof DossierJetonRoute
   '/partage/$jeton': typeof PartageJetonRoute
   '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/dossier/$jeton': typeof DossierJetonRoute
   '/partage/$jeton': typeof PartageJetonRoute
   '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/_authenticated/intranet': typeof AuthenticatedIntranetRouteRouteWithChildren
+  '/dossier/$jeton': typeof DossierJetonRoute
   '/partage/$jeton': typeof PartageJetonRoute
   '/_authenticated/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/_authenticated/intranet/admin': typeof AuthenticatedIntranetAdminRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/politique-confidentialite'
     | '/intranet'
+    | '/dossier/$jeton'
     | '/partage/$jeton'
     | '/intranet/acquis'
     | '/intranet/admin'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/politique-confidentialite'
+    | '/dossier/$jeton'
     | '/partage/$jeton'
     | '/intranet/acquis'
     | '/intranet/admin'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/politique-confidentialite'
     | '/_authenticated/intranet'
+    | '/dossier/$jeton'
     | '/partage/$jeton'
     | '/_authenticated/intranet/acquis'
     | '/_authenticated/intranet/admin'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  DossierJetonRoute: typeof DossierJetonRoute
   PartageJetonRoute: typeof PartageJetonRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -269,6 +282,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/intranet'
       preLoaderRoute: typeof AuthenticatedIntranetRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/dossier/$jeton': {
+      id: '/dossier/$jeton'
+      path: '/dossier/$jeton'
+      fullPath: '/dossier/$jeton'
+      preLoaderRoute: typeof DossierJetonRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/partage/$jeton': {
       id: '/partage/$jeton'
@@ -398,6 +418,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  DossierJetonRoute: DossierJetonRoute,
   PartageJetonRoute: PartageJetonRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
