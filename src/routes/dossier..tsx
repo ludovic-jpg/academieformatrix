@@ -29,7 +29,7 @@ import {
 } from "@/lib/documents";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/dossier/$jeton")({
+export const Route = createFileRoute("/dossier/")({
   ssr: false,
   head: () => ({
     meta: [
