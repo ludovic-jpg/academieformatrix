@@ -412,7 +412,10 @@ function Supports() {
                 Aucun support généré pour l'instant.
               </p>
             )}
-            {fichiers.map((f) => (
+            {Object.entries(fichiers.reduce((acc, f) => { const match = f.nom.match(/Module ([0-9]+)/); const mod = match ? "Module " + match[1] : "Autres"; if (!acc[mod]) acc[mod] = []; acc[mod].push(f); return acc; }, {} as Record<string, typeof fichiers>)).map(([mod, fs]) => (
+              <div key={mod} className="space-y-2">
+                <h3 className="text-sm font-bold text-primary mt-4">{mod}</h3>
+                {fs.map((f) => (
               <div
                 key={f.id}
                 className="flex flex-wrap items-center gap-2 rounded-md border p-3"
@@ -588,7 +591,10 @@ function Supports() {
                   Aucun fichier pour l'instant.
                 </p>
               )}
-              {fichiers.map((f) => (
+              {Object.entries(fichiers.reduce((acc, f) => { const match = f.nom.match(/Module ([0-9]+)/); const mod = match ? "Module " + match[1] : "Autres"; if (!acc[mod]) acc[mod] = []; acc[mod].push(f); return acc; }, {} as Record<string, typeof fichiers>)).map(([mod, fs]) => (
+              <div key={mod} className="space-y-2">
+                <h3 className="text-sm font-bold text-primary mt-4">{mod}</h3>
+                {fs.map((f) => (
                 <div
                   key={f.id}
                   className="flex flex-wrap items-center gap-2 rounded-md border p-3"
