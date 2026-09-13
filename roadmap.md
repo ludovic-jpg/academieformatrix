@@ -11,4 +11,4 @@
 - [x] Générer les deux QCM de 10 questions avec Claude
 - [x] Noter et enregistrer les réponses apprenant
 - [x] Remonter les résultats au formateur et à l’administration
-- [ ] Vérifier les parcours ordinateur et mobile
+- [x] Vérifier les parcours ordinateur et mobile

@@ -21,7 +21,7 @@ export function QcmApprenant({ questionnaire, onSubmit }: {
   }, [questionnaire]);
 
   const soumettre = async () => {
-    if (reponses.length !== questionnaire.questions.length || reponses.some((r) => r === undefined)) {
+    if (!questionnaire.questions.every((_, index) => Number.isInteger(reponses[index]))) {
       setErreur("Répondez aux 10 questions avant de transmettre votre évaluation.");
       return;
     }
