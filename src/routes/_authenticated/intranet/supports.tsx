@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { Download, Eye, Layers, Loader2, Sparkles } from "lucide-react";
+import {
+  Download,
+  Eye,
+  Layers,
+  Loader2,
+  Package,
+  Sparkles,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +34,12 @@ import {
   nomSupport,
   type DeckSupport,
 } from "@/lib/supports/pptx";
+import { construirePptxEnrichi } from "@/lib/supports/pptx";
 import { construireSupportPdf } from "@/lib/supports/export";
+import { construireScorm } from "@/lib/supports/scorm";
+import type { ModuleCours } from "@/lib/supports/cours";
+import { genererCoursApprofondi } from "@/lib/cours-claude.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nomFichierSur } from "@/lib/storage";
 
 export const Route = createFileRoute("/_authenticated/intranet/supports")({
@@ -84,6 +96,8 @@ function Supports() {
   const [progression, setProgression] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [fichiers, setFichiers] = useState<FichierSupport[]>([]);
+  const genererCoursFn = useServerFn(genererCoursApprofondi);
+  const [coursEnrichi, setCoursEnrichi] = useState<ModuleCours[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -243,7 +257,99 @@ function Supports() {
     }
   };
 
-  return (
+  /** Dépose un fichier généré dans le coffre-fort du parcours. */
+  const deposerAuCoffre = async (
+    nom: string,
+    blob: Blob,
+    userId: string,
+    idFormation: string,
+  ) => {
+    const chemin = `${userId}/${idFormation}/${Date.now()}-${nomFichierSur(nom)}`;
+    const { error: erreurDepot } = await supabase.storage
+      .from("coffre")
+      .upload(chemin, blob);
+    if (erreurDepot) throw new Error(erreurDepot.message);
+    const { error: erreurLigne } = await supabase
+      .from("coffre_fichiers")
+      .insert({
+        formateur_id: userId,
+        formation_id: idFormation,
+        nom,
+        chemin,
+        taille: blob.size,
+      });
+    if (erreurLigne) throw new Error(erreurLigne.message);
+  };
+
+  /**
+   * Recherche théorique approfondie module par module, puis production
+   * des PowerPoint enrichis et du paquet SCORM 1.2 du parcours.
+   */
+  const lancerRechercheClaude = async () => {
+    if (!formation) return;
+    setErreur(null);
+    setEnCours("claude");
+    setCoursEnrichi([]);
+    try {
+      const { data: utilisateur } = await supabase.auth.getUser();
+      if (!utilisateur.user) {
+        throw new Error("Votre session a expiré, reconnectez-vous.");
+      }
+      const produits: ModuleCours[] = [];
+      for (let i = 0; i < modules.length; i += 1) {
+        const mod = modules[i]!;
+        setProgression(
+          `Recherche théorique — module ${i + 1}/${modules.length} : ${mod.titre}`,
+        );
+        const moduleCours = await genererCoursFn({
+          data: {
+            titreFormation: formation.titre,
+            publicCible: formation.programme?.publicConcerne ?? "",
+            module: { titre: mod.titre, points: mod.points ?? [] },
+          },
+        });
+        produits.push(moduleCours);
+        setCoursEnrichi([...produits]);
+
+        const pptx = await construirePptxEnrichi(
+          formation.titre,
+          moduleCours,
+          i + 1,
+        );
+        await deposerAuCoffre(
+          `Parcours de formation - ${formation.titre} - Module ${i + 1} - ${moduleCours.title} - Approfondi.pptx`,
+          pptx,
+          utilisateur.user.id,
+          formation.id,
+        );
+        await chargerFichiers(formation.id);
+      }
+
+      setProgression("Assemblage du module SCORM 1.2…");
+      const zip = await construireScorm({
+        titreFormation: formation.titre,
+        modules: produits,
+      });
+      await deposerAuCoffre(
+        `Parcours de formation - ${formation.titre} - Module e-learning SCORM 1.2.zip`,
+        zip,
+        utilisateur.user.id,
+        formation.id,
+      );
+      await chargerFichiers(formation.id);
+    } catch (e) {
+      setErreur(
+        e instanceof Error
+          ? e.message
+          : "La recherche théorique et la génération ont échoué.",
+      );
+    } finally {
+      setProgression(null);
+      setEnCours(null);
+    }
+  };
+
+  const contenuClassique = (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -373,5 +479,135 @@ function Supports() {
         </Card>
       ))}
     </div>
+  );
+
+  return (
+    <Tabs defaultValue="classique" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="classique">Supports PowerPoint</TabsTrigger>
+        <TabsTrigger value="scorm">
+          Générateur SCORM 1.2 &amp; PPT amélioré
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="classique">{contenuClassique}</TabsContent>
+
+      <TabsContent value="scorm" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Générateur SCORM 1.2 &amp; PPT amélioré</CardTitle>
+            <CardDescription>
+              L'assistant mène une recherche théorique approfondie sur chaque
+              module (concepts clés, thèses et théories, exemples pratiques,
+              mises en situation, schéma conceptuel, synthèse et quiz), puis
+              produit un PowerPoint enrichi par module et un module e-learning
+              SCORM 1.2 interactif, déposés dans le coffre-fort du parcours.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Parcours de formation</Label>
+              <Select value={formationId} onValueChange={setFormationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un parcours" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formations.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.titre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={enCours !== null || modules.length === 0}
+                onClick={lancerRechercheClaude}
+              >
+                {enCours === "claude" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Package className="mr-2 h-4 w-4" />
+                )}
+                Lancer la recherche théorique &amp; Générer avec Claude 3.5
+              </Button>
+              {progression && (
+                <span className="text-sm text-muted-foreground">
+                  {progression}
+                </span>
+              )}
+            </div>
+            {erreur && <p className="text-sm text-destructive">{erreur}</p>}
+          </CardContent>
+        </Card>
+
+        {coursEnrichi.map((moduleCours, index) => (
+          <Card key={`${moduleCours.title}-${index}`}>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Module {index + 1} — {moduleCours.title}
+              </CardTitle>
+              <CardDescription>
+                {moduleCours.slides.length} diapositives approfondies générées.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {moduleCours.slides.map((slide) => (
+                <div
+                  key={slide.slideNumber}
+                  className="rounded-md border p-3 text-sm"
+                >
+                  <p className="font-bold text-primary">
+                    {slide.slideNumber}. {slide.title}
+                  </p>
+                  <p className="mt-1 line-clamp-3 text-muted-foreground">
+                    {slide.content}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+
+        {formation && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Fichiers du parcours
+              </CardTitle>
+              <CardDescription>
+                Les PowerPoint enrichis et l'archive SCORM 1.2 sont déposés ici
+                puis téléchargeables.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {fichiers.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Aucun fichier pour l'instant.
+                </p>
+              )}
+              {fichiers.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex flex-wrap items-center gap-2 rounded-md border p-3"
+                >
+                  <span className="flex-1 text-sm">{f.nom}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => ouvrir(f, true)}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Télécharger
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 }

@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
 
+import { BanniereOnglet } from "@/components/BanniereOnglet";
+import { BANNIERES } from "@/config/bannieres";
 import { EnTeteFormatrix } from "@/components/EnTeteFormatrix";
 import { PhotoProfil } from "@/components/PhotoProfil";
 import { Button } from "@/components/ui/button";
@@ -65,6 +67,10 @@ function Intranet() {
   }, []);
 
   const verrouille = statut !== null && statut !== "validee" && !estAdmin;
+  const banniere =
+    Object.entries(BANNIERES).find(([chemin]) =>
+      location.pathname.startsWith(chemin),
+    )?.[1] ?? null;
 
   const seDeconnecter = async () => {
     await queryClient.cancelQueries();
@@ -148,7 +154,16 @@ function Intranet() {
               </p>
             </div>
           ) : (
-            <Outlet />
+            <>
+              {banniere && (
+                <BanniereOnglet
+                  titre={banniere.titre}
+                  description={banniere.description}
+                  icone={banniere.icone}
+                />
+              )}
+              <Outlet />
+            </>
           )}
         </div>
       </div>
