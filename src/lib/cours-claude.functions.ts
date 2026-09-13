@@ -16,7 +16,7 @@ const entree = z.object({
 
 export type EntreeCours = z.infer<typeof entree>;
 
-const MODELE = "claude-3-5-sonnet-20241022";
+const MODELE = "claude-sonnet-5";
 const URL_ANTHROPIC = "https://api.anthropic.com/v1/messages";
 
 const RUBRIQUES = [
