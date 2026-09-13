@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { Check, Download, Loader2, Upload } from "lucide-react";
 
 import { EnTeteFormatrix } from "@/components/EnTeteFormatrix";
+import { LecteurCours } from "@/components/LecteurCours";
+import { QcmApprenant } from "@/components/QcmApprenant";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,12 +18,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QUESTIONS_RECUEIL, TITRE_RECUEIL } from "@/config/recueil";
 import {
   confirmerDepotDossier,
   consulterDossier,
   enregistrerRecueil,
   preparerDepotDossier,
+  soumettreQuestionnaire,
 } from "@/lib/dossier.functions";
 import {
   telechargerQuestionnairePdf,
@@ -71,6 +75,7 @@ function EspaceApprenant() {
   const enregistrer = useServerFn(enregistrerRecueil);
   const preparer = useServerFn(preparerDepotDossier);
   const confirmer = useServerFn(confirmerDepotDossier);
+  const soumettreQcm = useServerFn(soumettreQuestionnaire);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dossier", jeton],
@@ -199,7 +204,14 @@ function EspaceApprenant() {
         )}
 
         {data && (
-          <>
+          <Tabs defaultValue="supports" className="space-y-6">
+            <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3">
+              <TabsTrigger value="supports">Mes supports</TabsTrigger>
+              <TabsTrigger value="cours">Mon cours</TabsTrigger>
+              <TabsTrigger value="evaluations">Espace évaluation</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="supports">
             <Card>
               <CardHeader>
                 <CardTitle className="text-primary">
@@ -229,6 +241,23 @@ function EspaceApprenant() {
                 )}
               </CardContent>
             </Card>
+            </TabsContent>
+
+            <TabsContent value="cours">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-primary">{data.titreFormation}</CardTitle>
+                  <CardDescription>
+                    Parcourez directement les contenus théoriques de votre formation.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <LecteurCours supports={data.supportsCours} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="evaluations" className="space-y-6">
 
             <Card>
               <CardHeader>
@@ -343,6 +372,23 @@ function EspaceApprenant() {
                       </p>
                     )}
                     {blocDepot(type)}
+                    {questionnaire && questionnaire.questions.length === 10 && (
+                      <QcmApprenant
+                        questionnaire={questionnaire}
+                        onSubmit={async (questionnaireId, reponsesQcm) => {
+                          const resultat = await soumettreQcm({
+                            data: { jeton, questionnaireId, reponses: reponsesQcm },
+                          });
+                          await refetch();
+                          return {
+                            questionnaireId,
+                            type,
+                            reponses: reponsesQcm,
+                            ...resultat,
+                          };
+                        }}
+                      />
+                    )}
                     {documentsDe(type).map((doc) => (
                       <a
                         key={doc.id}
@@ -365,7 +411,8 @@ function EspaceApprenant() {
             {message && (
               <p className="text-xs font-medium text-primary">{message}</p>
             )}
-          </>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

@@ -59,6 +59,18 @@ interface PieceAdmin {
   created_at: string;
 }
 
+interface EvaluationAdmin {
+  id: string;
+  score: number;
+  total: number;
+  soumis_at: string;
+  dossiers_apprenant: {
+    apprenants: { apprenant_prenom: string; apprenant_nom: string } | null;
+    formations: { titre: string } | null;
+  } | null;
+  questionnaires: { type: string; titre: string } | null;
+}
+
 const LIBELLES: Record<string, string> = {
   cv: "CV",
   diplome: "Diplôme",
@@ -71,6 +83,7 @@ const ONGLETS = [
   ["budget", "Demandes de budget"],
   ["formation", "Dossiers de formation"],
   ["candidatures", "Candidatures de formateurs"],
+  ["evaluations", "Évaluations apprenants"],
 ] as const;
 
 type Onglet = (typeof ONGLETS)[number][0];
@@ -81,6 +94,7 @@ function Administration() {
   const [candidatures, setCandidatures] = useState<Candidature[]>([]);
   const [pieces, setPieces] = useState<PieceAdmin[]>([]);
   const [demandes, setDemandes] = useState<DemandeAdmin[]>([]);
+  const [evaluations, setEvaluations] = useState<EvaluationAdmin[]>([]);
   const [reponses, setReponses] = useState<Record<string, string>>({});
   const [chargement, setChargement] = useState(true);
 
@@ -119,6 +133,12 @@ function Administration() {
     const liste = (demandesData ?? []) as unknown as DemandeAdmin[];
     setDemandes(liste);
     setReponses(Object.fromEntries(liste.map((d) => [d.id, d.reponse ?? ""])));
+
+    const { data: evaluationsData } = await supabase
+      .from("reponses_questionnaires")
+      .select("id, score, total, soumis_at, dossiers_apprenant(apprenants(apprenant_prenom, apprenant_nom), formations(titre)), questionnaires(type, titre)")
+      .order("soumis_at", { ascending: false });
+    setEvaluations((evaluationsData ?? []) as unknown as EvaluationAdmin[]);
     setChargement(false);
   };
 
@@ -388,6 +408,37 @@ function Administration() {
     </div>
   );
 
+  const sectionEvaluations = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-primary">Évaluations apprenants</CardTitle>
+        <CardDescription>Résultats transmis depuis les espaces de formation.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {evaluations.map((evaluation) => {
+          const apprenant = evaluation.dossiers_apprenant?.apprenants;
+          return (
+            <div key={evaluation.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
+              <div>
+                <p className="text-sm font-bold text-primary">
+                  {apprenant?.apprenant_prenom} {apprenant?.apprenant_nom}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {evaluation.dossiers_apprenant?.formations?.titre} — {evaluation.questionnaires?.titre}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold">{evaluation.score}/{evaluation.total}</p>
+                <p className="text-xs text-muted-foreground">{Math.round((evaluation.score / Math.max(1, evaluation.total)) * 100)} %</p>
+              </div>
+            </div>
+          );
+        })}
+        {evaluations.length === 0 && <p className="text-sm text-muted-foreground">Aucune évaluation transmise.</p>}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap gap-2 rounded-md bg-muted p-2">
@@ -406,7 +457,9 @@ function Administration() {
 
       {onglet === "candidatures"
         ? sectionCandidatures()
-        : sectionDemandes(onglet)}
+        : onglet === "evaluations"
+          ? sectionEvaluations()
+          : sectionDemandes(onglet)}
     </div>
   );
 }

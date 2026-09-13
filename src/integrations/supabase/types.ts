@@ -465,6 +465,57 @@ export type Database = {
           },
         ]
       }
+      reponses_questionnaires: {
+        Row: {
+          dossier_id: string
+          formateur_id: string
+          id: string
+          questionnaire_id: string
+          reponses: Json
+          score: number
+          soumis_at: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          dossier_id: string
+          formateur_id: string
+          id?: string
+          questionnaire_id: string
+          reponses?: Json
+          score?: number
+          soumis_at?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          dossier_id?: string
+          formateur_id?: string
+          id?: string
+          questionnaire_id?: string
+          reponses?: Json
+          score?: number
+          soumis_at?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reponses_questionnaires_dossier_id_fkey"
+            columns: ["dossier_id"]
+            isOneToOne: false
+            referencedRelation: "dossiers_apprenant"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reponses_questionnaires_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reponses_recueil: {
         Row: {
           created_at: string
@@ -499,6 +550,47 @@ export type Database = {
             columns: ["dossier_id"]
             isOneToOne: true
             referencedRelation: "dossiers_apprenant"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supports_cours: {
+        Row: {
+          contenu: Json
+          created_at: string
+          formateur_id: string
+          formation_id: string
+          id: string
+          numero_module: number
+          titre_module: string
+          updated_at: string
+        }
+        Insert: {
+          contenu: Json
+          created_at?: string
+          formateur_id: string
+          formation_id: string
+          id?: string
+          numero_module: number
+          titre_module: string
+          updated_at?: string
+        }
+        Update: {
+          contenu?: Json
+          created_at?: string
+          formateur_id?: string
+          formation_id?: string
+          id?: string
+          numero_module?: number
+          titre_module?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supports_cours_formation_id_fkey"
+            columns: ["formation_id"]
+            isOneToOne: false
+            referencedRelation: "formations"
             referencedColumns: ["id"]
           },
         ]

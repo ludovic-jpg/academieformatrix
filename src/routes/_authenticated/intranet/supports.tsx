@@ -38,6 +38,7 @@ import { construirePptxEnrichi } from "@/lib/supports/pptx";
 import { construireSupportPdf } from "@/lib/supports/export";
 import { construireScorm } from "@/lib/supports/scorm";
 import type { ModuleCours } from "@/lib/supports/cours";
+import type { Json } from "@/integrations/supabase/types";
 import { genererCoursApprofondi } from "@/lib/cours-claude.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nomFichierSur } from "@/lib/storage";
@@ -270,14 +271,14 @@ function Supports() {
       .upload(chemin, blob);
     if (erreurDepot) throw new Error(erreurDepot.message);
     const { error: erreurLigne } = await supabase
-      .from("coffre_fichiers")
-      .insert({
-        formateur_id: userId,
-        formation_id: idFormation,
-        nom,
-        chemin,
-        taille: blob.size,
-      });
+        .from("coffre_fichiers")
+        .insert({
+          formateur_id: userId,
+          formation_id: idFormation,
+          nom,
+          chemin,
+          taille: blob.size,
+        });
     if (erreurLigne) throw new Error(erreurLigne.message);
   };
 
@@ -310,6 +311,15 @@ function Supports() {
         });
         produits.push(moduleCours);
         setCoursEnrichi([...produits]);
+
+        const { error: erreurCours } = await supabase.from("supports_cours").upsert({
+          formateur_id: utilisateur.user.id,
+          formation_id: formation.id,
+          numero_module: i + 1,
+          titre_module: moduleCours.title,
+          contenu: JSON.parse(JSON.stringify(moduleCours)) as Json,
+        }, { onConflict: "formation_id,numero_module" });
+        if (erreurCours) throw new Error(erreurCours.message);
 
         const pptx = await construirePptxEnrichi(
           formation.titre,
@@ -348,6 +358,14 @@ function Supports() {
       setEnCours(null);
     }
   };
+
+  const fichiersParModule = fichiers.reduce((acc, f) => {
+    const match = f.nom.match(/Module ([0-9]+)/);
+    const mod = match ? "Module " + match[1] : "Général";
+    if (!acc[mod]) acc[mod] = [];
+    acc[mod].push(f);
+    return acc;
+  }, {} as Record<string, typeof fichiers>);
 
   const contenuClassique = (
     <div className="space-y-6">
@@ -398,48 +416,6 @@ function Supports() {
         </CardContent>
       </Card>
 
-      {formation && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Supports déjà créés</CardTitle>
-            <CardDescription>
-              Tous les supports de ce parcours, consultables et téléchargeables.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {fichiers.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Aucun support généré pour l'instant.
-              </p>
-            )}
-            {fichiers.map((f) => (
-              <div
-                key={f.id}
-                className="flex flex-wrap items-center gap-2 rounded-md border p-3"
-              >
-                <span className="flex-1 text-sm">{f.nom}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => ouvrir(f, false)}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Aperçu
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => ouvrir(f, true)}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       {formation && modules.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Ce parcours ne contient aucun module.
@@ -456,7 +432,7 @@ function Supports() {
               {(mod.points ?? []).slice(0, 4).join(" • ")}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
               {PARTIES.map((partie) => (
                 <Button
@@ -475,9 +451,39 @@ function Supports() {
                 </Button>
               ))}
             </div>
+            {(fichiersParModule[`Module ${index + 1}`] ?? []).length > 0 && (
+              <div className="space-y-2 border-t pt-4">
+                <p className="text-sm font-bold text-primary">Supports du module</p>
+                {(fichiersParModule[`Module ${index + 1}`] ?? []).map((f) => (
+                  <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                    <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
+                    <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}>
+                      <Eye className="mr-2 h-4 w-4" /> Aperçu
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => ouvrir(f, true)}>
+                      <Download className="mr-2 h-4 w-4" /> Télécharger
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
+      {formation && (fichiersParModule["Général"] ?? []).length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Supports du parcours</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {(fichiersParModule["Général"] ?? []).map((f) => (
+              <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
+                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}><Eye className="mr-2 h-4 w-4" /> Aperçu</Button>
+                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, true)}><Download className="mr-2 h-4 w-4" /> Télécharger</Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
@@ -497,11 +503,7 @@ function Supports() {
           <CardHeader>
             <CardTitle>Générateur SCORM 1.2 &amp; PPT amélioré</CardTitle>
             <CardDescription>
-              L'assistant mène une recherche théorique approfondie sur chaque
-              module (concepts clés, thèses et théories, exemples pratiques,
-              mises en situation, schéma conceptuel, synthèse et quiz), puis
-              produit un PowerPoint enrichi par module et un module e-learning
-              SCORM 1.2 interactif, déposés dans le coffre-fort du parcours.
+              L'assistant mène une recherche théorique approfondie sur chaque module pour produire un contenu riche, un PowerPoint "premium" et un paquet SCORM interactif.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -520,92 +522,44 @@ function Supports() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
+            {formation && (
               <Button
+                variant="default"
                 disabled={enCours !== null || modules.length === 0}
                 onClick={lancerRechercheClaude}
               >
                 {enCours === "claude" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Package className="mr-2 h-4 w-4" />
+                  <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                Lancer la recherche théorique &amp; Générer avec Claude 3.5
+                Lancer la recherche théorique &amp; génération SCORM
               </Button>
-              {progression && (
-                <span className="text-sm text-muted-foreground">
-                  {progression}
-                </span>
-              )}
-            </div>
+            )}
+            {progression && (
+              <p className="text-sm text-muted-foreground">{progression}</p>
+            )}
             {erreur && <p className="text-sm text-destructive">{erreur}</p>}
           </CardContent>
         </Card>
 
-        {coursEnrichi.map((moduleCours, index) => (
-          <Card key={`${moduleCours.title}-${index}`}>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Module {index + 1} — {moduleCours.title}
-              </CardTitle>
-              <CardDescription>
-                {moduleCours.slides.length} diapositives approfondies générées.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {moduleCours.slides.map((slide) => (
-                <div
-                  key={slide.slideNumber}
-                  className="rounded-md border p-3 text-sm"
-                >
-                  <p className="font-bold text-primary">
-                    {slide.slideNumber}. {slide.title}
+        {coursEnrichi.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {coursEnrichi.map((m, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <CardTitle className="text-sm">
+                    Module {i + 1} : {m.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    {m.slides.length} diapositives approfondies générées.
                   </p>
-                  <p className="mt-1 line-clamp-3 text-muted-foreground">
-                    {slide.content}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-
-        {formation && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Fichiers du parcours
-              </CardTitle>
-              <CardDescription>
-                Les PowerPoint enrichis et l'archive SCORM 1.2 sont déposés ici
-                puis téléchargeables.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {fichiers.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Aucun fichier pour l'instant.
-                </p>
-              )}
-              {fichiers.map((f) => (
-                <div
-                  key={f.id}
-                  className="flex flex-wrap items-center gap-2 rounded-md border p-3"
-                >
-                  <span className="flex-1 text-sm">{f.nom}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => ouvrir(f, true)}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Télécharger
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </TabsContent>
     </Tabs>

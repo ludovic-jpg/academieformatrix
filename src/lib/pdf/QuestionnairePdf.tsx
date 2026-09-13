@@ -100,7 +100,7 @@ export function QuestionnairePdf({
   avecCorrige,
 }: {
   titre: string;
-  questions: { question: string; propositions: string[]; bonneReponse: number }[];
+  questions: { question: string; propositions: string[]; bonneReponse?: number }[];
   avecCorrige: boolean;
 }) {
   return (

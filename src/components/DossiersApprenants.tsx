@@ -36,6 +36,7 @@ interface Dossier {
   etape: string;
   apprenant: Apprenant | null;
   completude: number;
+  resultats: { type: string; score: number; total: number }[];
 }
 
 const DOCUMENTS_ATTENDUS = ["recueil", "positionnement", "acquis"] as const;
@@ -86,8 +87,16 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
         .select("soumis_at")
         .eq("dossier_id", dossier.id)
         .maybeSingle();
+      const { data: evaluations } = await supabase
+        .from("reponses_questionnaires")
+        .select("score, total, questionnaires(type)")
+        .eq("dossier_id", dossier.id);
       const types = new Set((documents ?? []).map((d) => d.type));
       if (recueil?.soumis_at) types.add("recueil");
+      for (const evaluation of evaluations ?? []) {
+        const questionnaire = evaluation.questionnaires as unknown as { type?: string } | null;
+        if (questionnaire?.type) types.add(questionnaire.type);
+      }
       const faits = DOCUMENTS_ATTENDUS.filter((t) => types.has(t)).length;
       resultats.push({
         id: dossier.id,
@@ -97,6 +106,11 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
           (listeApprenants ?? []).find((a) => a.id === dossier.apprenant_id) ??
           null,
         completude: Math.round((faits / DOCUMENTS_ATTENDUS.length) * 100),
+        resultats: (evaluations ?? []).map((evaluation) => ({
+          type: ((evaluation.questionnaires as unknown as { type?: string } | null)?.type ?? "evaluation"),
+          score: Number(evaluation.score),
+          total: Number(evaluation.total),
+        })),
       });
     }
     setDossiers(resultats);
@@ -222,6 +236,15 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
                     style={{ width: `${dossier.completude}%` }}
                   />
                 </div>
+                {dossier.resultats.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {dossier.resultats.map((resultat) => (
+                      <span key={resultat.type} className="rounded-full border px-3 py-1 text-xs font-medium">
+                        {resultat.type === "acquis" ? "Évaluation des acquis" : "Positionnement"} : {resultat.score}/{resultat.total}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center gap-2">
                   <Input value={lien} readOnly className="sm:w-80" />
                   <Button
