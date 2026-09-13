@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { Download, Eye, Layers, Loader2, Sparkles } from "lucide-react";
+import {
+  Download,
+  Eye,
+  Layers,
+  Loader2,
+  Package,
+  Sparkles,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +34,12 @@ import {
   nomSupport,
   type DeckSupport,
 } from "@/lib/supports/pptx";
+import { construirePptxEnrichi } from "@/lib/supports/pptx";
 import { construireSupportPdf } from "@/lib/supports/export";
+import { construireScorm } from "@/lib/supports/scorm";
+import type { ModuleCours } from "@/lib/supports/cours";
+import { genererCoursApprofondi } from "@/lib/cours-claude.functions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nomFichierSur } from "@/lib/storage";
 
 export const Route = createFileRoute("/_authenticated/intranet/supports")({
