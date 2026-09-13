@@ -270,14 +270,14 @@ function Supports() {
       .upload(chemin, blob);
     if (erreurDepot) throw new Error(erreurDepot.message);
     const { error: erreurLigne } = await supabase
-      .from("coffre_fichiers")
-      .insert({
-        formateur_id: userId,
-        formation_id: idFormation,
-        nom,
-        chemin,
-        taille: blob.size,
-      });
+        .from("coffre_fichiers")
+        .insert({
+          formateur_id: userId,
+          formation_id: idFormation,
+          nom,
+          chemin,
+          taille: blob.size,
+        });
     if (erreurLigne) throw new Error(erreurLigne.message);
   };
 
@@ -349,6 +349,14 @@ function Supports() {
     }
   };
 
+  const fichiersParModule = fichiers.reduce((acc, f) => {
+    const match = f.nom.match(/Module ([0-9]+)/);
+    const mod = match ? "Module " + match[1] : "Général";
+    if (!acc[mod]) acc[mod] = [];
+    acc[mod].push(f);
+    return acc;
+  }, {} as Record<string, typeof fichiers>);
+
   const contenuClassique = (
     <div className="space-y-6">
       <Card>
@@ -403,40 +411,46 @@ function Supports() {
           <CardHeader>
             <CardTitle className="text-base">Supports déjà créés</CardTitle>
             <CardDescription>
-              Tous les supports de ce parcours, consultables et téléchargeables.
+              Tous les supports de ce parcours, regroupés par module.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-6">
             {fichiers.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 Aucun support généré pour l'instant.
               </p>
             )}
-            {Object.entries(fichiers.reduce((acc, f) => { const match = f.nom.match(/Module ([0-9]+)/); const mod = match ? "Module " + match[1] : "Autres"; if (!acc[mod]) acc[mod] = []; acc[mod].push(f); return acc; }, {} as Record<string, typeof fichiers>)).map(([mod, fs]) => (
-              <div key={mod} className="space-y-2">
-                <h3 className="text-sm font-bold text-primary mt-4">{mod}</h3>
-                {fs.map((f) => (
-              <div
-                key={f.id}
-                className="flex flex-wrap items-center gap-2 rounded-md border p-3"
-              >
-                <span className="flex-1 text-sm">{f.nom}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => ouvrir(f, false)}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Aperçu
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => ouvrir(f, true)}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger
-                </Button>
+            {Object.entries(fichiersParModule).map(([mod, fs]) => (
+              <div key={mod} className="space-y-3">
+                <h3 className="text-sm font-bold text-primary border-b pb-1">{mod}</h3>
+                <div className="grid gap-2">
+                  {fs.map((f) => (
+                    <div
+                      key={f.id}
+                      className="flex flex-wrap items-center gap-2 rounded-md border p-3 hover:bg-slate-50 transition-colors"
+                    >
+                      <span className="flex-1 text-sm">{f.nom}</span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => ouvrir(f, false)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Aperçu
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => ouvrir(f, true)}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Télécharger
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </CardContent>
@@ -500,11 +514,7 @@ function Supports() {
           <CardHeader>
             <CardTitle>Générateur SCORM 1.2 &amp; PPT amélioré</CardTitle>
             <CardDescription>
-              L'assistant mène une recherche théorique approfondie sur chaque
-              module (concepts clés, thèses et théories, exemples pratiques,
-              mises en situation, schéma conceptuel, synthèse et quiz), puis
-              produit un PowerPoint enrichi par module et un module e-learning
-              SCORM 1.2 interactif, déposés dans le coffre-fort du parcours.
+              L'assistant mène une recherche théorique approfondie sur chaque module pour produire un contenu riche, un PowerPoint "premium" et un paquet SCORM interactif.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -523,95 +533,44 @@ function Supports() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex flex-wrap items-center gap-3">
+            {formation && (
               <Button
+                variant="default"
                 disabled={enCours !== null || modules.length === 0}
                 onClick={lancerRechercheClaude}
               >
                 {enCours === "claude" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Package className="mr-2 h-4 w-4" />
+                  <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                Lancer la recherche théorique &amp; Générer avec Claude 3.5
+                Lancer la recherche théorique &amp; génération SCORM
               </Button>
-              {progression && (
-                <span className="text-sm text-muted-foreground">
-                  {progression}
-                </span>
-              )}
-            </div>
+            )}
+            {progression && (
+              <p className="text-sm text-muted-foreground">{progression}</p>
+            )}
             {erreur && <p className="text-sm text-destructive">{erreur}</p>}
           </CardContent>
         </Card>
 
-        {coursEnrichi.map((moduleCours, index) => (
-          <Card key={`${moduleCours.title}-${index}`}>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Module {index + 1} — {moduleCours.title}
-              </CardTitle>
-              <CardDescription>
-                {moduleCours.slides.length} diapositives approfondies générées.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {moduleCours.slides.map((slide) => (
-                <div
-                  key={slide.slideNumber}
-                  className="rounded-md border p-3 text-sm"
-                >
-                  <p className="font-bold text-primary">
-                    {slide.slideNumber}. {slide.title}
+        {coursEnrichi.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {coursEnrichi.map((m, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <CardTitle className="text-sm">
+                    Module {i + 1} : {m.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    {m.slides.length} diapositives approfondies générées.
                   </p>
-                  <p className="mt-1 line-clamp-3 text-muted-foreground">
-                    {slide.content}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-
-        {formation && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Fichiers du parcours
-              </CardTitle>
-              <CardDescription>
-                Les PowerPoint enrichis et l'archive SCORM 1.2 sont déposés ici
-                puis téléchargeables.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {fichiers.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Aucun fichier pour l'instant.
-                </p>
-              )}
-              {Object.entries(fichiers.reduce((acc, f) => { const match = f.nom.match(/Module ([0-9]+)/); const mod = match ? "Module " + match[1] : "Autres"; if (!acc[mod]) acc[mod] = []; acc[mod].push(f); return acc; }, {} as Record<string, typeof fichiers>)).map(([mod, fs]) => (
-              <div key={mod} className="space-y-2">
-                <h3 className="text-sm font-bold text-primary mt-4">{mod}</h3>
-                {fs.map((f) => (
-                <div
-                  key={f.id}
-                  className="flex flex-wrap items-center gap-2 rounded-md border p-3"
-                >
-                  <span className="flex-1 text-sm">{f.nom}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => ouvrir(f, true)}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Télécharger
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </TabsContent>
     </Tabs>
