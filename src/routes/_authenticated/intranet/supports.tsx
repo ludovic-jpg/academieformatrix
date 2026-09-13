@@ -480,4 +480,134 @@ function Supports() {
       ))}
     </div>
   );
+
+  return (
+    <Tabs defaultValue="classique" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="classique">Supports PowerPoint</TabsTrigger>
+        <TabsTrigger value="scorm">
+          Générateur SCORM 1.2 &amp; PPT amélioré
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="classique">{contenuClassique}</TabsContent>
+
+      <TabsContent value="scorm" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Générateur SCORM 1.2 &amp; PPT amélioré</CardTitle>
+            <CardDescription>
+              L'assistant mène une recherche théorique approfondie sur chaque
+              module (concepts clés, thèses et théories, exemples pratiques,
+              mises en situation, schéma conceptuel, synthèse et quiz), puis
+              produit un PowerPoint enrichi par module et un module e-learning
+              SCORM 1.2 interactif, déposés dans le coffre-fort du parcours.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Parcours de formation</Label>
+              <Select value={formationId} onValueChange={setFormationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un parcours" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formations.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.titre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                disabled={enCours !== null || modules.length === 0}
+                onClick={lancerRechercheClaude}
+              >
+                {enCours === "claude" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Package className="mr-2 h-4 w-4" />
+                )}
+                Lancer la recherche théorique &amp; Générer avec Claude 3.5
+              </Button>
+              {progression && (
+                <span className="text-sm text-muted-foreground">
+                  {progression}
+                </span>
+              )}
+            </div>
+            {erreur && <p className="text-sm text-destructive">{erreur}</p>}
+          </CardContent>
+        </Card>
+
+        {coursEnrichi.map((moduleCours, index) => (
+          <Card key={`${moduleCours.title}-${index}`}>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Module {index + 1} — {moduleCours.title}
+              </CardTitle>
+              <CardDescription>
+                {moduleCours.slides.length} diapositives approfondies générées.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {moduleCours.slides.map((slide) => (
+                <div
+                  key={slide.slideNumber}
+                  className="rounded-md border p-3 text-sm"
+                >
+                  <p className="font-bold text-primary">
+                    {slide.slideNumber}. {slide.title}
+                  </p>
+                  <p className="mt-1 line-clamp-3 text-muted-foreground">
+                    {slide.content}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+
+        {formation && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Fichiers du parcours
+              </CardTitle>
+              <CardDescription>
+                Les PowerPoint enrichis et l'archive SCORM 1.2 sont déposés ici
+                puis téléchargeables.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {fichiers.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Aucun fichier pour l'instant.
+                </p>
+              )}
+              {fichiers.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex flex-wrap items-center gap-2 rounded-md border p-3"
+                >
+                  <span className="flex-1 text-sm">{f.nom}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => ouvrir(f, true)}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Télécharger
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+    </Tabs>
+  );
 }
