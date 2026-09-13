@@ -202,7 +202,7 @@ function Profil() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-4">
-          <PhotoProfil className="h-20 w-20" />
+          <PhotoProfil className="h-28 w-28 border-2 shadow-md sm:h-36 sm:w-36" />
           <div className="flex items-center gap-2">
             <Input
               type="file"
