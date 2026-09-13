@@ -15,7 +15,25 @@ export interface QuestionnaireDossier {
   id: string;
   type: "positionnement" | "acquis";
   titre: string;
-  questions: { question: string; propositions: string[]; bonneReponse: number }[];
+  questions: { question: string; propositions: string[] }[];
+  resultat: ResultatQuestionnaire | null;
+}
+
+export interface ResultatQuestionnaire {
+  questionnaireId: string;
+  type: "positionnement" | "acquis";
+  score: number;
+  total: number;
+  pourcentage: number;
+  reponses: number[];
+  soumisAt: string;
+}
+
+export interface SupportCoursDossier {
+  id: string;
+  numeroModule: number;
+  titreModule: string;
+  contenu: import("@/lib/supports/cours").ModuleCours;
 }
 
 export interface ContenuDossier {
@@ -30,6 +48,8 @@ export interface ContenuDossier {
   documentsDeposes: FichierDossier[];
   reponsesRecueil: Record<string, string>;
   recueilSoumis: boolean;
+  supportsCours: SupportCoursDossier[];
+  resultatsQuestionnaires: ResultatQuestionnaire[];
 }
 
 const jetonSchema = z.string().trim().min(10).max(100);
@@ -63,12 +83,23 @@ export const consulterDossier = createServerFn({ method: "POST" })
       { data: questionnaires },
       { data: documents },
       { data: recueil },
+      { data: supportsCours },
+      { data: resultats },
     ] = await Promise.all([
       supabaseAdmin
         .from("formations")
         .select("titre, duree_heures")
         .eq("id", dossier.formation_id)
         .maybeSingle(),
+      supabaseAdmin
+        .from("supports_cours")
+        .select("id, numero_module, titre_module, contenu")
+        .eq("formation_id", dossier.formation_id)
+        .order("numero_module", { ascending: true }),
+      supabaseAdmin
+        .from("reponses_questionnaires")
+        .select("questionnaire_id, reponses, score, total, soumis_at, questionnaires(type)")
+        .eq("dossier_id", dossier.id),
       supabaseAdmin
         .from("apprenants")
         .select("apprenant_prenom, apprenant_nom")
@@ -123,7 +154,21 @@ export const consulterDossier = createServerFn({ method: "POST" })
       return resultats;
     };
 
-    // Un seul questionnaire par type : le plus récent.
+    const resultatsQuestionnaires: ResultatQuestionnaire[] = (resultats ?? []).map((r) => {
+      const relation = r.questionnaires as unknown as { type?: string } | null;
+      const total = Number(r.total ?? 0);
+      return {
+        questionnaireId: r.questionnaire_id,
+        type: relation?.type === "acquis" ? "acquis" : "positionnement",
+        score: Number(r.score ?? 0),
+        total,
+        pourcentage: total > 0 ? Math.round((Number(r.score) / total) * 100) : 0,
+        reponses: Array.isArray(r.reponses) ? (r.reponses as number[]) : [],
+        soumisAt: r.soumis_at,
+      };
+    });
+
+    // Un seul questionnaire par type : le plus récent, sans transmettre le corrigé.
     const parType = new Map<string, QuestionnaireDossier>();
     for (const q of questionnaires ?? []) {
       if (parType.has(q.type)) continue;
@@ -131,7 +176,10 @@ export const consulterDossier = createServerFn({ method: "POST" })
         id: q.id,
         type: q.type as "positionnement" | "acquis",
         titre: q.titre,
-        questions: (q.questions ?? []) as QuestionnaireDossier["questions"],
+        questions: ((q.questions ?? []) as Array<{ question: string; propositions: string[] }>).map(
+          (question) => ({ question: question.question, propositions: question.propositions }),
+        ),
+        resultat: resultatsQuestionnaires.find((r) => r.questionnaireId === q.id) ?? null,
       });
     }
 
@@ -147,6 +195,56 @@ export const consulterDossier = createServerFn({ method: "POST" })
       documentsDeposes: await signer("coffre", (documents ?? []) as never),
       reponsesRecueil: (recueil?.reponses ?? {}) as Record<string, string>,
       recueilSoumis: !!recueil?.soumis_at,
+      supportsCours: (supportsCours ?? []).map((support) => ({
+        id: support.id,
+        numeroModule: support.numero_module,
+        titreModule: support.titre_module,
+        contenu: support.contenu as unknown as SupportCoursDossier["contenu"],
+      })),
+      resultatsQuestionnaires,
+    };
+  });
+
+/** Corrige et enregistre un QCM depuis le lien personnel de l'apprenant. */
+export const soumettreQuestionnaire = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({
+      jeton: jetonSchema,
+      questionnaireId: z.string().uuid(),
+      reponses: z.array(z.number().int().min(0).max(3)).length(10),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin, dossier } = await chargerDossier(data.jeton);
+    const { data: questionnaire } = await supabaseAdmin
+      .from("questionnaires")
+      .select("id, formation_id, questions")
+      .eq("id", data.questionnaireId)
+      .eq("formation_id", dossier.formation_id)
+      .maybeSingle();
+    if (!questionnaire) throw new Error("Questionnaire introuvable.");
+    const questions = questionnaire.questions as unknown as Array<{ bonneReponse: number }>;
+    if (questions.length !== 10) throw new Error("Ce questionnaire ne contient pas 10 questions.");
+    const score = questions.reduce(
+      (total, question, index) => total + (data.reponses[index] === question.bonneReponse ? 1 : 0),
+      0,
+    );
+    const soumisAt = new Date().toISOString();
+    const { error } = await supabaseAdmin.from("reponses_questionnaires").upsert({
+      dossier_id: dossier.id,
+      questionnaire_id: questionnaire.id,
+      formateur_id: dossier.formateur_id,
+      reponses: data.reponses,
+      score,
+      total: questions.length,
+      soumis_at: soumisAt,
+    }, { onConflict: "dossier_id,questionnaire_id" });
+    if (error) throw new Error("L'enregistrement de vos réponses a échoué.");
+    return {
+      score,
+      total: questions.length,
+      pourcentage: Math.round((score / questions.length) * 100),
+      soumisAt,
     };
   });
 

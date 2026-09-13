@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 const entree = z.object({
   titre: z.string().trim().min(1).max(200),
   niveau: z.string().trim().min(1).max(50),
@@ -22,28 +24,8 @@ export interface ContenuQuestionnaire {
   questions: QuestionQcm[];
 }
 
-const SCHEMA_JSON = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    questions: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          question: { type: "string" },
-          propositions: { type: "array", items: { type: "string" } },
-          bonneReponse: { type: "integer" },
-        },
-        required: ["question", "propositions", "bonneReponse"],
-      },
-    },
-  },
-  required: ["questions"],
-} as const;
-
-const URL_GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
+const MODELE = "claude-sonnet-5";
+const URL_ANTHROPIC = "https://api.anthropic.com/v1/messages";
 
 function promptSysteme(data: EntreeQuestionnaire) {
   const intitule =
@@ -53,48 +35,31 @@ function promptSysteme(data: EntreeQuestionnaire) {
   return `Tu es un ingénieur pédagogique francophone spécialisé dans la formation professionnelle conforme aux exigences Qualiopi. Tu rédiges ${intitule}. À partir du titre de la formation, du niveau, du public et du contenu détaillé qui te sont fournis, rédige exactement ${data.nombreQuestions} questions à choix multiples, adaptées au niveau indiqué et strictement fondées sur le contenu de la formation. Chaque question comporte 4 propositions de réponse claires et une seule bonne réponse, indiquée par son index (0 à 3). Les questions sont formulées en français, sans numérotation dans le texte. N'invente aucune donnée logistique (dates, prix, noms de personnes). Réponds uniquement en JSON valide strictement conforme au schéma demandé, sans aucun texte avant ou après.`;
 }
 
-async function appelGateway(apiKey: string, data: EntreeQuestionnaire) {
-  const res = await fetch(URL_GATEWAY, {
+async function appelAnthropic(apiKey: string, data: EntreeQuestionnaire) {
+  const res = await fetch(URL_ANTHROPIC, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "openai/gpt-6-astra",
+      model: MODELE,
+      max_tokens: 6000,
       stream: true,
-      reasoning: { effort: "low", summary: "auto" },
-      text: {
-        format: {
-          type: "json_schema",
-          name: "questionnaire",
-          strict: true,
-          schema: SCHEMA_JSON,
-        },
-      },
-      input: [
-        {
-          role: "system",
-          content: [{ type: "input_text", text: promptSysteme(data) }],
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: [
-                `Titre de la formation : ${data.titre}`,
-                `Niveau : ${data.niveau}`,
-                `Public concerné : ${data.publicConcerne}`,
-                `Nombre de questions attendu : ${data.nombreQuestions}`,
-                "Contenu de la formation :",
-                data.contenu,
-              ].join("\n"),
-            },
-          ],
-        },
-      ],
+      system: promptSysteme(data),
+      messages: [{
+        role: "user",
+        content: [
+          `Titre de la formation : ${data.titre}`,
+          `Niveau : ${data.niveau}`,
+          `Public concerné : ${data.publicConcerne}`,
+          `Nombre de questions attendu : ${data.nombreQuestions}`,
+          "Contenu de la formation :",
+          data.contenu,
+          'Réponds exclusivement avec ce JSON strict : {"questions":[{"question":"...","propositions":["...","...","...","..."],"bonneReponse":0}]}',
+        ].join("\n"),
+      }],
     }),
   });
 
@@ -133,16 +98,10 @@ async function appelGateway(apiKey: string, data: EntreeQuestionnaire) {
       try {
         const evt = JSON.parse(donnees) as {
           type?: string;
-          delta?: string;
-          response?: { output_text?: string };
+          delta?: { type?: string; text?: string };
         };
-        if (evt.type === "response.output_text.delta" && evt.delta) {
-          texte += evt.delta;
-        } else if (
-          evt.type === "response.completed" &&
-          evt.response?.output_text
-        ) {
-          texte = evt.response.output_text;
+        if (evt.type === "content_block_delta" && evt.delta?.text) {
+          texte += evt.delta.text;
         }
       } catch {
         // événement non JSON ignoré
@@ -153,19 +112,20 @@ async function appelGateway(apiKey: string, data: EntreeQuestionnaire) {
 }
 
 export const genererQuestionnaire = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => entree.parse(input))
   .handler(async ({ data }): Promise<ContenuQuestionnaire> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = process.env["ANTHROPIC_API_KEY"];
     if (!apiKey) {
       throw new Error(
-        "Configuration IA manquante côté serveur (clé Lovable AI absente).",
+        "Configuration Claude manquante côté serveur.",
       );
     }
 
-    let tentative = await appelGateway(apiKey, data);
+    let tentative = await appelAnthropic(apiKey, data);
     if (!tentative.ok && (tentative.status === 429 || tentative.status >= 500)) {
       await new Promise((r) => setTimeout(r, 3000));
-      tentative = await appelGateway(apiKey, data);
+      tentative = await appelAnthropic(apiKey, data);
     }
     if (!tentative.ok) {
       throw new Error(
@@ -175,7 +135,11 @@ export const genererQuestionnaire = createServerFn({ method: "POST" })
 
     let contenu: unknown;
     try {
-      contenu = JSON.parse(tentative.body);
+      const nettoye = tentative.body.replace(/```json|```/g, "").trim();
+      const debut = nettoye.indexOf("{");
+      const fin = nettoye.lastIndexOf("}");
+      if (debut < 0 || fin < debut) throw new Error("json-absent");
+      contenu = JSON.parse(nettoye.slice(debut, fin + 1));
     } catch {
       throw new Error("La réponse de l'IA n'est pas un JSON valide.");
     }
@@ -184,8 +148,8 @@ export const genererQuestionnaire = createServerFn({ method: "POST" })
       questions: z.array(
         z.object({
           question: z.string(),
-          propositions: z.array(z.string()),
-          bonneReponse: z.number().int(),
+          propositions: z.array(z.string()).length(4),
+          bonneReponse: z.number().int().min(0).max(3),
         }),
       ),
     });
