@@ -92,15 +92,6 @@ export const consulterDossier = createServerFn({ method: "POST" })
         .eq("id", dossier.formation_id)
         .maybeSingle(),
       supabaseAdmin
-        .from("supports_cours")
-        .select("id, numero_module, titre_module, contenu")
-        .eq("formation_id", dossier.formation_id)
-        .order("numero_module", { ascending: true }),
-      supabaseAdmin
-        .from("reponses_questionnaires")
-        .select("questionnaire_id, reponses, score, total, soumis_at, questionnaires(type)")
-        .eq("dossier_id", dossier.id),
-      supabaseAdmin
         .from("apprenants")
         .select("apprenant_prenom, apprenant_nom")
         .eq("id", dossier.apprenant_id)
@@ -130,6 +121,15 @@ export const consulterDossier = createServerFn({ method: "POST" })
         .select("reponses, soumis_at")
         .eq("dossier_id", dossier.id)
         .maybeSingle(),
+      supabaseAdmin
+        .from("supports_cours")
+        .select("id, numero_module, titre_module, contenu")
+        .eq("formation_id", dossier.formation_id)
+        .order("numero_module", { ascending: true }),
+      supabaseAdmin
+        .from("reponses_questionnaires")
+        .select("questionnaire_id, reponses, score, total, soumis_at, questionnaires(type)")
+        .eq("dossier_id", dossier.id),
     ]);
 
     const signer = async (
