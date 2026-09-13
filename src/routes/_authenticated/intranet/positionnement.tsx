@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authenticated/intranet/positionnement")(
       <EspaceQuestionnaire
         type="positionnement"
         intitule="Test de positionnement"
-        nombreQuestions={7}
+        nombreQuestions={10}
       />
     ),
   },

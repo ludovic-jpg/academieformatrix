@@ -92,7 +92,7 @@ function Intranet() {
             }
           />
           <div className="flex items-center gap-3">
-            <PhotoProfil />
+            <PhotoProfil className="h-16 w-16 border-2 shadow-sm sm:h-20 sm:w-20" />
             <Button variant="outline" size="sm" onClick={seDeconnecter}>
               <LogOut className="mr-2 h-4 w-4" />
               Se déconnecter

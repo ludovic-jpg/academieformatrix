@@ -38,6 +38,7 @@ import { construirePptxEnrichi } from "@/lib/supports/pptx";
 import { construireSupportPdf } from "@/lib/supports/export";
 import { construireScorm } from "@/lib/supports/scorm";
 import type { ModuleCours } from "@/lib/supports/cours";
+import type { Json } from "@/integrations/supabase/types";
 import { genererCoursApprofondi } from "@/lib/cours-claude.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nomFichierSur } from "@/lib/storage";
@@ -311,6 +312,15 @@ function Supports() {
         produits.push(moduleCours);
         setCoursEnrichi([...produits]);
 
+        const { error: erreurCours } = await supabase.from("supports_cours").upsert({
+          formateur_id: utilisateur.user.id,
+          formation_id: formation.id,
+          numero_module: i + 1,
+          titre_module: moduleCours.title,
+          contenu: JSON.parse(JSON.stringify(moduleCours)) as Json,
+        }, { onConflict: "formation_id,numero_module" });
+        if (erreurCours) throw new Error(erreurCours.message);
+
         const pptx = await construirePptxEnrichi(
           formation.titre,
           moduleCours,
@@ -406,57 +416,6 @@ function Supports() {
         </CardContent>
       </Card>
 
-      {formation && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Supports déjà créés</CardTitle>
-            <CardDescription>
-              Tous les supports de ce parcours, regroupés par module.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {fichiers.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Aucun support généré pour l'instant.
-              </p>
-            )}
-            {Object.entries(fichiersParModule).map(([mod, fs]) => (
-              <div key={mod} className="space-y-3">
-                <h3 className="text-sm font-bold text-primary border-b pb-1">{mod}</h3>
-                <div className="grid gap-2">
-                  {fs.map((f) => (
-                    <div
-                      key={f.id}
-                      className="flex flex-wrap items-center gap-2 rounded-md border p-3 hover:bg-slate-50 transition-colors"
-                    >
-                      <span className="flex-1 text-sm">{f.nom}</span>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => ouvrir(f, false)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          Aperçu
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => ouvrir(f, true)}
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Télécharger
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       {formation && modules.length === 0 && (
         <p className="text-sm text-muted-foreground">
           Ce parcours ne contient aucun module.
@@ -473,7 +432,7 @@ function Supports() {
               {(mod.points ?? []).slice(0, 4).join(" • ")}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
               {PARTIES.map((partie) => (
                 <Button
@@ -492,9 +451,39 @@ function Supports() {
                 </Button>
               ))}
             </div>
+            {(fichiersParModule[`Module ${index + 1}`] ?? []).length > 0 && (
+              <div className="space-y-2 border-t pt-4">
+                <p className="text-sm font-bold text-primary">Supports du module</p>
+                {(fichiersParModule[`Module ${index + 1}`] ?? []).map((f) => (
+                  <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                    <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
+                    <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}>
+                      <Eye className="mr-2 h-4 w-4" /> Aperçu
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => ouvrir(f, true)}>
+                      <Download className="mr-2 h-4 w-4" /> Télécharger
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
+      {formation && (fichiersParModule.Général ?? []).length > 0 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Supports du parcours</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {fichiersParModule.Général.map((f) => (
+              <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
+                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}><Eye className="mr-2 h-4 w-4" /> Aperçu</Button>
+                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, true)}><Download className="mr-2 h-4 w-4" /> Télécharger</Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
