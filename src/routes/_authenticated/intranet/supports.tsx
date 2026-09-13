@@ -96,6 +96,8 @@ function Supports() {
   const [progression, setProgression] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [fichiers, setFichiers] = useState<FichierSupport[]>([]);
+  const genererCoursFn = useServerFn(genererCoursApprofondi);
+  const [coursEnrichi, setCoursEnrichi] = useState<ModuleCours[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -255,7 +257,99 @@ function Supports() {
     }
   };
 
-  return (
+  /** Dépose un fichier généré dans le coffre-fort du parcours. */
+  const deposerAuCoffre = async (
+    nom: string,
+    blob: Blob,
+    userId: string,
+    idFormation: string,
+  ) => {
+    const chemin = `${userId}/${idFormation}/${Date.now()}-${nomFichierSur(nom)}`;
+    const { error: erreurDepot } = await supabase.storage
+      .from("coffre")
+      .upload(chemin, blob);
+    if (erreurDepot) throw new Error(erreurDepot.message);
+    const { error: erreurLigne } = await supabase
+      .from("coffre_fichiers")
+      .insert({
+        formateur_id: userId,
+        formation_id: idFormation,
+        nom,
+        chemin,
+        taille: blob.size,
+      });
+    if (erreurLigne) throw new Error(erreurLigne.message);
+  };
+
+  /**
+   * Recherche théorique approfondie module par module, puis production
+   * des PowerPoint enrichis et du paquet SCORM 1.2 du parcours.
+   */
+  const lancerRechercheClaude = async () => {
+    if (!formation) return;
+    setErreur(null);
+    setEnCours("claude");
+    setCoursEnrichi([]);
+    try {
+      const { data: utilisateur } = await supabase.auth.getUser();
+      if (!utilisateur.user) {
+        throw new Error("Votre session a expiré, reconnectez-vous.");
+      }
+      const produits: ModuleCours[] = [];
+      for (let i = 0; i < modules.length; i += 1) {
+        const mod = modules[i]!;
+        setProgression(
+          `Recherche théorique — module ${i + 1}/${modules.length} : ${mod.titre}`,
+        );
+        const moduleCours = await genererCoursFn({
+          data: {
+            titreFormation: formation.titre,
+            publicCible: formation.programme?.publicConcerne ?? "",
+            module: { titre: mod.titre, points: mod.points ?? [] },
+          },
+        });
+        produits.push(moduleCours);
+        setCoursEnrichi([...produits]);
+
+        const pptx = await construirePptxEnrichi(
+          formation.titre,
+          moduleCours,
+          i + 1,
+        );
+        await deposerAuCoffre(
+          `Parcours de formation - ${formation.titre} - Module ${i + 1} - ${moduleCours.title} - Approfondi.pptx`,
+          pptx,
+          utilisateur.user.id,
+          formation.id,
+        );
+        await chargerFichiers(formation.id);
+      }
+
+      setProgression("Assemblage du module SCORM 1.2…");
+      const zip = await construireScorm({
+        titreFormation: formation.titre,
+        modules: produits,
+      });
+      await deposerAuCoffre(
+        `Parcours de formation - ${formation.titre} - Module e-learning SCORM 1.2.zip`,
+        zip,
+        utilisateur.user.id,
+        formation.id,
+      );
+      await chargerFichiers(formation.id);
+    } catch (e) {
+      setErreur(
+        e instanceof Error
+          ? e.message
+          : "La recherche théorique et la génération ont échoué.",
+      );
+    } finally {
+      setProgression(null);
+      setEnCours(null);
+    }
+  };
+
+  const contenuClassique = (
     <div className="space-y-6">
       <Card>
         <CardHeader>
