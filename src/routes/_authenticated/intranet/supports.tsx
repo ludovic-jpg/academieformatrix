@@ -470,11 +470,11 @@ function Supports() {
           </CardContent>
         </Card>
       ))}
-      {formation && (fichiersParModule.Général ?? []).length > 0 && (
+      {formation && (fichiersParModule["Général"] ?? []).length > 0 && (
         <Card>
           <CardHeader><CardTitle className="text-base">Supports du parcours</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {fichiersParModule.Général.map((f) => (
+            {(fichiersParModule["Général"] ?? []).map((f) => (
               <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
                 <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
                 <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}><Eye className="mr-2 h-4 w-4" /> Aperçu</Button>

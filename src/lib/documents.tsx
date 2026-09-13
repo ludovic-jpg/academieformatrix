@@ -30,7 +30,7 @@ export async function telechargerProgrammeWord(programme: ProgrammeFormation) {
 /** Télécharge un questionnaire (test ou évaluation) au format PDF. */
 export async function telechargerQuestionnairePdf(questionnaire: {
   titre: string;
-  questions: { question: string; propositions: string[]; bonneReponse: number }[];
+  questions: { question: string; propositions: string[]; bonneReponse?: number }[];
   avecCorrige?: boolean;
 }) {
   const { Buffer } = await import("buffer");

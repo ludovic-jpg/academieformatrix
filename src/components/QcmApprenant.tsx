@@ -51,7 +51,7 @@ export function QcmApprenant({ questionnaire, onSubmit }: {
         <fieldset key={`${question.question}-${index}`} className="space-y-3 rounded-md border p-4">
           <legend className="px-1 text-sm font-bold text-primary">{index + 1}. {question.question}</legend>
           <RadioGroup
-            value={reponses[index]?.toString()}
+            value={reponses[index]?.toString() ?? null}
             onValueChange={(value) => setReponses((actuelles) => {
               const suivantes = [...actuelles];
               suivantes[index] = Number(value);
