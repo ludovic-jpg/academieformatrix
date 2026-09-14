@@ -49,7 +49,7 @@ export const genererSupport = createServerFn({ method: "POST" })
 
     const reponse = await genererAvecClaude({
       systeme: promptSysteme(data),
-      maxTokens: 8000,
+      maxTokens: 16000,
       message: [
         `Parcours de formation : ${data.titreParcours}`,
         `Module ${data.numeroModule} : ${data.titreModule}`,
