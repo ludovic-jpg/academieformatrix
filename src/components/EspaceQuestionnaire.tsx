@@ -2,13 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Eye, Loader2, Save, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,10 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ProgrammeFormation } from "@/config/programme";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import {
-  genererQuestionnaire,
-  type QuestionQcm,
-} from "@/lib/questionnaire.functions";
+import { genererQuestionnaire, type QuestionQcm } from "@/lib/questionnaire.functions";
 import { telechargerQuestionnairePdf } from "@/lib/documents";
 
 interface Formation {
@@ -70,6 +61,7 @@ export function EspaceQuestionnaire({
   const [message, setMessage] = useState<string | null>(null);
   const [archives, setArchives] = useState<QuestionnaireEnregistre[]>([]);
   const [apercu, setApercu] = useState<QuestionnaireEnregistre | null>(null);
+  const [idEnregistre, setIdEnregistre] = useState<string | null>(null);
 
   const charger = async () => {
     const { data: utilisateur } = await supabase.auth.getUser();
@@ -102,6 +94,7 @@ export function EspaceQuestionnaire({
     setEnCours(true);
     setErreur(null);
     setMessage(null);
+    setIdEnregistre(null);
     try {
       const sortie = await genererQuestionnaire({
         data: {
@@ -114,12 +107,35 @@ export function EspaceQuestionnaire({
         },
       });
       setQuestions(sortie.questions);
+
+      // Archivage immédiat : le questionnaire est déposé dans les Archives
+      // dès sa génération, sans dépendre d'une action manuelle ultérieure.
+      const { data: utilisateur } = await supabase.auth.getUser();
+      if (utilisateur.user) {
+        const { data: ligne, error } = await supabase
+          .from("questionnaires")
+          .insert({
+            formateur_id: utilisateur.user.id,
+            formation_id: formation.id,
+            type,
+            titre: `${intitule} — ${formation.titre}`,
+            questions: JSON.parse(JSON.stringify(sortie.questions)) as Json,
+          })
+          .select("id")
+          .single();
+        if (error) {
+          setErreur(
+            "Les questions ont été générées mais l'archivage automatique a échoué : " +
+              error.message,
+          );
+        } else if (ligne) {
+          setIdEnregistre((ligne as { id: string }).id);
+          setMessage("Questionnaire généré et archivé automatiquement.");
+          await charger();
+        }
+      }
     } catch (e) {
-      setErreur(
-        e instanceof Error
-          ? e.message
-          : "Une erreur est survenue pendant la génération.",
-      );
+      setErreur(e instanceof Error ? e.message : "Une erreur est survenue pendant la génération.");
     } finally {
       setEnCours(false);
     }
@@ -136,13 +152,16 @@ export function EspaceQuestionnaire({
       setEnregistrement(false);
       return;
     }
-    const { error } = await supabase.from("questionnaires").insert({
+    const payload = {
       formateur_id: utilisateur.user.id,
       formation_id: formation.id,
       type,
       titre: `${intitule} — ${formation.titre}`,
       questions: JSON.parse(JSON.stringify(questions)) as Json,
-    });
+    };
+    const { error } = idEnregistre
+      ? await supabase.from("questionnaires").update(payload).eq("id", idEnregistre)
+      : await supabase.from("questionnaires").insert(payload);
     if (error) setErreur("L'enregistrement a échoué : " + error.message);
     else {
       setMessage("Questionnaire enregistré dans les archives.");
@@ -154,13 +173,12 @@ export function EspaceQuestionnaire({
   const supprimer = async (id: string) => {
     await supabase.from("questionnaires").delete().eq("id", id);
     if (apercu?.id === id) setApercu(null);
+    if (idEnregistre === id) setIdEnregistre(null);
     await charger();
   };
 
   const majQuestion = (index: number, maj: Partial<QuestionQcm>) =>
-    setQuestions((qs) =>
-      qs.map((q, i) => (i === index ? { ...q, ...maj } : q)),
-    );
+    setQuestions((qs) => qs.map((q, i) => (i === index ? { ...q, ...maj } : q)));
 
   return (
     <Tabs defaultValue="generateur">
@@ -174,16 +192,13 @@ export function EspaceQuestionnaire({
           <CardHeader>
             <CardTitle className="text-primary">{intitule}</CardTitle>
             <CardDescription>
-              Choisissez une formation enregistrée, puis générez{" "}
-              {nombreQuestions} questions à choix multiples adaptées à son
-              niveau et à son contenu.
+              Choisissez une formation enregistrée, puis générez {nombreQuestions} questions à choix
+              multiples adaptées à son niveau et à son contenu.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-primary">
-                Formation
-              </Label>
+              <Label className="text-sm font-bold text-primary">Formation</Label>
               <Select value={formationId} onValueChange={setFormationId}>
                 <SelectTrigger className="sm:w-96">
                   <SelectValue placeholder="Choisir une formation" />
@@ -198,17 +213,12 @@ export function EspaceQuestionnaire({
               </Select>
               {formations.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Enregistrez d'abord une formation dans l'onglet « Mes
-                  Formations ».
+                  Enregistrez d'abord une formation dans l'onglet « Mes Formations ».
                 </p>
               )}
             </div>
 
-            <Button
-              type="button"
-              onClick={generer}
-              disabled={!formation || enCours}
-            >
+            <Button type="button" onClick={generer} disabled={!formation || enCours}>
               {enCours ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -220,24 +230,17 @@ export function EspaceQuestionnaire({
                   ? "Régénérer les questions"
                   : "Générer les questions par IA"}
             </Button>
-            {erreur && (
-              <p className="text-xs font-medium text-destructive">{erreur}</p>
-            )}
-            {message && (
-              <p className="text-xs font-medium text-primary">{message}</p>
-            )}
+            {erreur && <p className="text-xs font-medium text-destructive">{erreur}</p>}
+            {message && <p className="text-xs font-medium text-primary">{message}</p>}
           </CardContent>
         </Card>
 
         {questions.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-primary">
-                Questions (modifiables)
-              </CardTitle>
+              <CardTitle className="text-primary">Questions (modifiables)</CardTitle>
               <CardDescription>
-                Ajustez les intitulés, les propositions et la bonne réponse
-                avant d'enregistrer.
+                Ajustez les intitulés, les propositions et la bonne réponse avant d'enregistrer.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -247,9 +250,7 @@ export function EspaceQuestionnaire({
                     <Textarea
                       value={q.question}
                       rows={2}
-                      onChange={(e) =>
-                        majQuestion(index, { question: e.target.value })
-                      }
+                      onChange={(e) => majQuestion(index, { question: e.target.value })}
                       className="flex-1"
                     />
                     <Button
@@ -257,9 +258,7 @@ export function EspaceQuestionnaire({
                       variant="outline"
                       size="icon"
                       aria-label={`Supprimer la question ${index + 1}`}
-                      onClick={() =>
-                        setQuestions((qs) => qs.filter((_, i) => i !== index))
-                      }
+                      onClick={() => setQuestions((qs) => qs.filter((_, i) => i !== index))}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -271,9 +270,7 @@ export function EspaceQuestionnaire({
                           type="radio"
                           name={`bonne-${index}`}
                           checked={q.bonneReponse === j}
-                          onChange={() =>
-                            majQuestion(index, { bonneReponse: j })
-                          }
+                          onChange={() => majQuestion(index, { bonneReponse: j })}
                           aria-label={`Bonne réponse : proposition ${j + 1}`}
                         />
                         <Input
@@ -291,11 +288,7 @@ export function EspaceQuestionnaire({
                   </div>
                 </div>
               ))}
-              <Button
-                type="button"
-                onClick={enregistrer}
-                disabled={enregistrement}
-              >
+              <Button type="button" onClick={enregistrer} disabled={enregistrement}>
                 {enregistrement ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -353,16 +346,11 @@ export function EspaceQuestionnaire({
                     className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
                   >
                     <p className="text-sm text-muted-foreground">
-                      {intitule} —{" "}
-                      {new Date(a.created_at).toLocaleDateString("fr-FR")} —{" "}
+                      {intitule} — {new Date(a.created_at).toLocaleDateString("fr-FR")} —{" "}
                       {a.questions.length} questions
                     </p>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setApercu(a)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => setApercu(a)}>
                         <Eye className="mr-2 h-4 w-4" />
                         Voir
                       </Button>
@@ -393,11 +381,7 @@ export function EspaceQuestionnaire({
                         <Download className="mr-2 h-4 w-4" />
                         PDF corrigé
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void supprimer(a.id)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => void supprimer(a.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -426,23 +410,14 @@ export function EspaceQuestionnaire({
                   </p>
                   <ul className="mt-1 list-disc pl-5 text-muted-foreground">
                     {q.propositions.map((p, j) => (
-                      <li
-                        key={j}
-                        className={
-                          j === q.bonneReponse ? "font-bold text-primary" : ""
-                        }
-                      >
+                      <li key={j} className={j === q.bonneReponse ? "font-bold text-primary" : ""}>
                         {p}
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setApercu(null)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setApercu(null)}>
                 Fermer l'aperçu
               </Button>
             </CardContent>

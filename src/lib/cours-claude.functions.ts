@@ -16,9 +16,6 @@ const entree = z.object({
 
 export type EntreeCours = z.infer<typeof entree>;
 
-const MODELE = "claude-sonnet-5";
-const URL_ANTHROPIC = "https://api.anthropic.com/v1/messages";
-
 const RUBRIQUES = [
   "Concepts clés",
   "Thèses et théories de référence",
@@ -76,107 +73,25 @@ const schemaSortie = z.object({
     .min(1),
 });
 
-/** Extrait le JSON d'une réponse éventuellement entourée de texte ou de balises. */
-function extraireJson(texte: string) {
-  const nettoye = texte.replace(/```json|```/g, "").trim();
-  const debut = nettoye.indexOf("{");
-  const fin = nettoye.lastIndexOf("}");
-  if (debut === -1 || fin === -1) throw new Error("json-absent");
-  return nettoye.slice(debut, fin + 1);
-}
-
-async function appelAnthropic(cle: string, data: EntreeCours) {
-  const res = await fetch(URL_ANTHROPIC, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": cle,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: MODELE,
-      max_tokens: 8000,
-      temperature: 0.4,
-      stream: true,
-      messages: [{ role: "user", content: prompt(data) }],
-    }),
-  });
-
-  if (!res.ok || !res.body) {
-    const brut = await res.text().catch(() => "");
-    let message = brut;
-    try {
-      const parsed = JSON.parse(brut) as { error?: { message?: string } };
-      message = parsed.error?.message ?? brut;
-    } catch {
-      // message brut conservé
-    }
-    return { ok: false as const, status: res.status, body: message };
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let texte = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lignes = buffer.split("\n");
-    buffer = lignes.pop() ?? "";
-    for (const ligne of lignes) {
-      const t = ligne.trim();
-      if (!t.startsWith("data:")) continue;
-      const donnees = t.slice(5).trim();
-      if (!donnees || donnees === "[DONE]") continue;
-      try {
-        const evt = JSON.parse(donnees) as {
-          type?: string;
-          delta?: { type?: string; text?: string };
-        };
-        if (evt.type === "content_block_delta" && evt.delta?.text) {
-          texte += evt.delta.text;
-        }
-      } catch {
-        // événement non JSON ignoré
-      }
-    }
-  }
-  return { ok: true as const, status: 200, body: texte };
-}
-
 /**
  * Recherche théorique approfondie d'un module et production des
- * 6 diapositives e-learning correspondantes (Claude 3.5 Sonnet).
+ * 6 diapositives e-learning correspondantes (Claude Sonnet 5).
  */
 export const genererCoursApprofondi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => entree.parse(input))
   .handler(async ({ data }): Promise<ModuleCours> => {
-    const cle = process.env["ANTHROPIC_API_KEY"];
-    if (!cle) {
-      throw new Error(
-        "La clé Anthropic n'est pas encore enregistrée côté serveur.",
-      );
-    }
+    const { genererAvecClaude, extraireJsonClaude } = await import("./claude.server");
 
-    let tentative = await appelAnthropic(cle, data);
-    if (
-      !tentative.ok &&
-      (tentative.status === 429 || tentative.status >= 500)
-    ) {
-      await new Promise((r) => setTimeout(r, 4000));
-      tentative = await appelAnthropic(cle, data);
-    }
-    if (!tentative.ok) {
-      throw new Error(
-        `La recherche théorique a échoué (${tentative.status}) : ${tentative.body || "erreur inconnue"}`,
-      );
-    }
+    const texte = await genererAvecClaude({
+      systeme: "",
+      message: prompt(data),
+      maxTokens: 8000,
+    });
 
     let brut: unknown;
     try {
-      brut = JSON.parse(extraireJson(tentative.body));
+      brut = extraireJsonClaude(texte);
     } catch {
       throw new Error("La réponse de Claude n'est pas un JSON exploitable.");
     }

@@ -14,12 +14,6 @@ export const programmeSchema = z.object({
     .min(1, "Le titre est obligatoire")
     .max(200, "Le titre doit faire moins de 200 caractères"),
   modeFormation: z.enum(MODES_FORMATION as [string, ...string[]]),
-  plateforme: z
-    .string()
-    .trim()
-    .max(100, "La plateforme doit faire moins de 100 caractères")
-    .optional()
-    .or(z.literal("")),
   dureeHeures: z.coerce
     .number({ error: "La durée est obligatoire" })
     .positive("La durée doit être supérieure à 0")
@@ -57,7 +51,6 @@ export type ProgrammeFormValues = z.input<typeof programmeSchema>;
 export const VALEURS_FORMULAIRE_DEFAUT: ProgrammeFormValues = {
   titre: "",
   modeFormation: "Présentiel",
-  plateforme: "",
   dureeHeures: "" as unknown as number,
   nombreModules: 3,
   publicConcerne: "",
@@ -66,6 +59,8 @@ export const VALEURS_FORMULAIRE_DEFAUT: ProgrammeFormValues = {
   objectifsPedagogiques: [],
   modules: [],
 };
+
+const PLATEFORME_PAR_DEFAUT = "Google Meet";
 
 /** Construit un ProgrammeFormation complet à partir des valeurs validées. */
 export function versProgrammeFormation(
@@ -76,5 +71,8 @@ export function versProgrammeFormation(
     ...RUBRIQUES_FIXES,
     modeFormation: valeurs.modeFormation as ProgrammeFormation["modeFormation"],
     niveau: valeurs.niveau as ProgrammeFormation["niveau"],
+    plateforme: valeurs.modeFormation.toLowerCase().includes("synchrone")
+      ? PLATEFORME_PAR_DEFAUT
+      : undefined,
   };
 }

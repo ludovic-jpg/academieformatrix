@@ -1,25 +1,11 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Download,
-  FileText,
-  Loader2,
-  Plus,
-  Save,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { Download, FileText, Loader2, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 
 import { Champ, ListeEditable } from "@/components/champs";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,7 +19,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   MODES_FORMATION,
   NIVEAUX,
-  
   type ModeFormation,
   type Niveau,
   type ProgrammeFormation,
@@ -45,10 +30,7 @@ import {
   type ProgrammeFormValues,
 } from "@/lib/programme-schema";
 import { genererProgramme } from "@/lib/generation.functions";
-import {
-  telechargerProgrammePdf,
-  telechargerProgrammeWord,
-} from "@/lib/documents";
+import { telechargerProgrammePdf, telechargerProgrammeWord } from "@/lib/documents";
 
 export function GenerateurProgramme({
   onEnregistrer,
@@ -78,15 +60,9 @@ export function GenerateurProgramme({
   const [wordEnCours, setWordEnCours] = useState(false);
   const [erreurWord, setErreurWord] = useState<string | null>(null);
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
-  const [messageEnregistrement, setMessageEnregistrement] = useState<
-    string | null
-  >(null);
-  const [erreurEnregistrement, setErreurEnregistrement] = useState<
-    string | null
-  >(null);
+  const [messageEnregistrement, setMessageEnregistrement] = useState<string | null>(null);
+  const [erreurEnregistrement, setErreurEnregistrement] = useState<string | null>(null);
 
-  const modeFormation = watch("modeFormation");
-  const afficherPlateforme = modeFormation.toLowerCase().includes("synchrone");
   const modules = watch("modules");
   const objectifs = watch("objectifsPedagogiques");
   const pdfPret =
@@ -101,9 +77,7 @@ export function GenerateurProgramme({
       await telechargerProgrammePdf(versProgrammeFormation(valeurs));
     } catch (e) {
       setErreurPdf(
-        e instanceof Error
-          ? e.message
-          : "Une erreur est survenue pendant la création du PDF.",
+        e instanceof Error ? e.message : "Une erreur est survenue pendant la création du PDF.",
       );
     } finally {
       setPdfEnCours(false);
@@ -118,9 +92,7 @@ export function GenerateurProgramme({
       await telechargerProgrammeWord(versProgrammeFormation(valeurs));
     } catch (e) {
       setErreurWord(
-        e instanceof Error
-          ? e.message
-          : "Une erreur est survenue pendant la création du Word.",
+        e instanceof Error ? e.message : "Une erreur est survenue pendant la création du Word.",
       );
     } finally {
       setWordEnCours(false);
@@ -138,9 +110,7 @@ export function GenerateurProgramme({
       setMessageEnregistrement("Formation enregistrée dans vos archives.");
     } catch (e) {
       setErreurEnregistrement(
-        e instanceof Error
-          ? e.message
-          : "Une erreur est survenue pendant l'enregistrement.",
+        e instanceof Error ? e.message : "Une erreur est survenue pendant l'enregistrement.",
       );
     } finally {
       setEnregistrementEnCours(false);
@@ -167,9 +137,7 @@ export function GenerateurProgramme({
       setValue("modules", sortie.modules, { shouldValidate: true });
     } catch (e) {
       setErreurGeneration(
-        e instanceof Error
-          ? e.message
-          : "Une erreur est survenue pendant la génération.",
+        e instanceof Error ? e.message : "Une erreur est survenue pendant la génération.",
       );
     } finally {
       setEnCours(false);
@@ -182,12 +150,10 @@ export function GenerateurProgramme({
         {/* 1. Informations générales */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-primary">
-              1. Informations générales
-            </CardTitle>
+            <CardTitle className="text-primary">1. Informations générales</CardTitle>
             <CardDescription>
-              Intitulé de la formation et modalités de déroulement. Les champs
-              marqués d'un astérisque sont obligatoires.
+              Intitulé de la formation et modalités de déroulement. Les champs marqués d'un
+              astérisque sont obligatoires.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -228,20 +194,6 @@ export function GenerateurProgramme({
                   )}
                 />
               </Champ>
-              {afficherPlateforme && (
-                <Champ
-                  id="plateforme"
-                  label="Plateforme utilisée"
-                  erreur={errors.plateforme?.message}
-                >
-                  <Input
-                    id="plateforme"
-                    placeholder="Ex. : Teams, Zoom, Google Meet"
-                    aria-invalid={!!errors.plateforme}
-                    {...register("plateforme")}
-                  />
-                </Champ>
-              )}
               <Champ
                 id="duree"
                 label="Durée (en heures)"
@@ -278,9 +230,7 @@ export function GenerateurProgramme({
         {/* 2. Public & prérequis */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-primary">
-              2. Public &amp; prérequis
-            </CardTitle>
+            <CardTitle className="text-primary">2. Public &amp; prérequis</CardTitle>
             <CardDescription>
               À qui s'adresse la formation et dans quelles conditions.
             </CardDescription>
@@ -300,12 +250,7 @@ export function GenerateurProgramme({
                 {...register("publicConcerne")}
               />
             </Champ>
-            <Champ
-              id="prerequis"
-              label="Prérequis"
-              obligatoire
-              erreur={errors.prerequis?.message}
-            >
+            <Champ id="prerequis" label="Prérequis" obligatoire erreur={errors.prerequis?.message}>
               <Textarea
                 id="prerequis"
                 placeholder="Ex. : Aucun prérequis / maîtrise de base de l'outil informatique…"
@@ -314,20 +259,12 @@ export function GenerateurProgramme({
                 {...register("prerequis")}
               />
             </Champ>
-            <Champ
-              id="niveau"
-              label="Niveau"
-              obligatoire
-              erreur={errors.niveau?.message}
-            >
+            <Champ id="niveau" label="Niveau" obligatoire erreur={errors.niveau?.message}>
               <Controller
                 control={control}
                 name="niveau"
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => field.onChange(v as Niveau)}
-                  >
+                  <Select value={field.value} onValueChange={(v) => field.onChange(v as Niveau)}>
                     <SelectTrigger id="niveau" className="sm:w-64">
                       <SelectValue placeholder="Choisir un niveau" />
                     </SelectTrigger>
@@ -350,8 +287,8 @@ export function GenerateurProgramme({
           <CardHeader>
             <CardTitle className="text-primary">3. Génération IA</CardTitle>
             <CardDescription>
-              Génération des objectifs pédagogiques et du contenu des modules à
-              partir des informations saisies.
+              Génération des objectifs pédagogiques et du contenu des modules à partir des
+              informations saisies.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -375,20 +312,17 @@ export function GenerateurProgramme({
               </Button>
               {!isValid && !enCours && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Renseignez les 5 champs obligatoires (titre, durée, public
-                  concerné, prérequis et niveau) pour activer la génération.
+                  Renseignez les 5 champs obligatoires (titre, durée, public concerné, prérequis et
+                  niveau) pour activer la génération.
                 </p>
               )}
               {enCours && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  La rédaction peut prendre une à deux minutes, merci de
-                  patienter.
+                  La rédaction peut prendre une à deux minutes, merci de patienter.
                 </p>
               )}
               {erreurGeneration && (
-                <p className="mt-2 text-xs font-medium text-destructive">
-                  {erreurGeneration}
-                </p>
+                <p className="mt-2 text-xs font-medium text-destructive">{erreurGeneration}</p>
               )}
             </div>
 
@@ -409,37 +343,23 @@ export function GenerateurProgramme({
                   control={control}
                   name="modules"
                   render={({ field }) => {
-                    const majModules = (
-                      modulesMaj: { titre: string; points: string[] }[],
-                    ) => field.onChange(modulesMaj);
+                    const majModules = (modulesMaj: { titre: string; points: string[] }[]) =>
+                      field.onChange(modulesMaj);
                     const majTitre = (index: number, titre: string) =>
-                      majModules(
-                        field.value.map((m, i) =>
-                          i === index ? { ...m, titre } : m,
-                        ),
-                      );
+                      majModules(field.value.map((m, i) => (i === index ? { ...m, titre } : m)));
                     const majPoints = (index: number, points: string[]) =>
-                      majModules(
-                        field.value.map((m, i) =>
-                          i === index ? { ...m, points } : m,
-                        ),
-                      );
+                      majModules(field.value.map((m, i) => (i === index ? { ...m, points } : m)));
                     return (
                       <div className="space-y-3">
                         <Label className="text-sm font-bold text-primary">
                           Modules (modifiables)
                         </Label>
                         {field.value.map((module, index) => (
-                          <div
-                            key={index}
-                            className="space-y-3 rounded-md border p-4"
-                          >
+                          <div key={index} className="space-y-3 rounded-md border p-4">
                             <div className="flex items-center gap-2">
                               <Input
                                 value={module.titre}
-                                onChange={(e) =>
-                                  majTitre(index, e.target.value)
-                                }
+                                onChange={(e) => majTitre(index, e.target.value)}
                                 placeholder={`Titre du module ${index + 1}`}
                                 className="font-semibold"
                               />
@@ -448,9 +368,7 @@ export function GenerateurProgramme({
                                 variant="outline"
                                 size="icon"
                                 onClick={() =>
-                                  majModules(
-                                    field.value.filter((_, i) => i !== index),
-                                  )
+                                  majModules(field.value.filter((_, i) => i !== index))
                                 }
                                 aria-label={`Supprimer le module ${index + 1}`}
                                 className="shrink-0"
@@ -469,12 +387,7 @@ export function GenerateurProgramme({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            majModules([
-                              ...field.value,
-                              { titre: "", points: [""] },
-                            ])
-                          }
+                          onClick={() => majModules([...field.value, { titre: "", points: [""] }])}
                           className="border-dashed"
                         >
                           <Plus className="mr-2 h-4 w-4" />
@@ -492,9 +405,7 @@ export function GenerateurProgramme({
         {/* 4. Aperçu & exports */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-primary">
-              4. Aperçu &amp; exports
-            </CardTitle>
+            <CardTitle className="text-primary">4. Aperçu &amp; exports</CardTitle>
             <CardDescription>
               Enregistrement de la formation et téléchargement des documents.
             </CardDescription>
@@ -513,9 +424,7 @@ export function GenerateurProgramme({
                   ) : (
                     <Save className="mr-2 h-4 w-4" />
                   )}
-                  {enregistrementEnCours
-                    ? "Enregistrement…"
-                    : "Enregistrer la formation"}
+                  {enregistrementEnCours ? "Enregistrement…" : "Enregistrer la formation"}
                 </Button>
               )}
               <Button
@@ -553,9 +462,7 @@ export function GenerateurProgramme({
               </p>
             )}
             {messageEnregistrement && (
-              <p className="mt-2 text-xs font-medium text-primary">
-                {messageEnregistrement}
-              </p>
+              <p className="mt-2 text-xs font-medium text-primary">{messageEnregistrement}</p>
             )}
             <p className="mt-2 text-xs text-muted-foreground">
               {pdfPret
