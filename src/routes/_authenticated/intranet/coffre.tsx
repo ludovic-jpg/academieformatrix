@@ -17,7 +17,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { nomFichierSur } from "@/lib/storage";
 import { DossiersApprenants } from "@/components/DossiersApprenants";
 import { VisionneuseFichier, type ApercuFichier } from "@/components/VisionneuseFichier";
-import { construireApercuScorm } from "@/lib/supports/scormPreview";
 
 export const Route = createFileRoute("/_authenticated/intranet/coffre")({
   component: Coffre,
@@ -77,7 +76,6 @@ function Coffre() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [copie, setCopie] = useState(false);
   const [apercu, setApercu] = useState<ApercuFichier | null>(null);
-  const [apercuUrlObjet, setApercuUrlObjet] = useState<string | null>(null);
   const [chargementApercu, setChargementApercu] = useState<string | null>(null);
 
   useEffect(() => {
@@ -156,17 +154,7 @@ function Coffre() {
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
-  const fermerApercu = () => {
-    if (apercuUrlObjet) URL.revokeObjectURL(apercuUrlObjet);
-    setApercuUrlObjet(null);
-    setApercu(null);
-  };
-
-  /**
-   * Visionneuse en incrustation : les PDF s'affichent directement via leur
-   * URL signée (le navigateur les rend nativement) ; les paquets SCORM sont
-   * dézippés puis reconstruits en une page HTML autonome avant affichage.
-   */
+  /** Visionneuse en incrustation : le PDF s'affiche directement via son URL signée. */
   const previsualiser = async (fichier: Fichier) => {
     setErreur(null);
     setChargementApercu(fichier.id);
@@ -175,17 +163,7 @@ function Coffre() {
         .from("coffre")
         .createSignedUrl(fichier.chemin, 300);
       if (error || !data) throw new Error("Impossible d'ouvrir ce fichier pour le moment.");
-
-      if (/\.zip$/i.test(fichier.nom)) {
-        const reponse = await fetch(data.signedUrl);
-        if (!reponse.ok) throw new Error("Le paquet n'a pas pu être téléchargé pour aperçu.");
-        const html = await construireApercuScorm(await reponse.blob());
-        const urlObjet = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-        setApercuUrlObjet(urlObjet);
-        setApercu({ titre: fichier.nom, url: urlObjet });
-      } else {
-        setApercu({ titre: fichier.nom, url: data.signedUrl });
-      }
+      setApercu({ titre: fichier.nom, url: data.signedUrl });
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Impossible de prévisualiser ce fichier.");
     } finally {
@@ -397,8 +375,7 @@ function Coffre() {
             <CardHeader>
               <CardTitle className="text-base">Documents généraux</CardTitle>
               <CardDescription>
-                Paquet SCORM, pièces déposées manuellement et documents rattachés automatiquement au
-                parcours.
+                Pièces déposées manuellement et documents rattachés automatiquement au parcours.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -502,7 +479,7 @@ function Coffre() {
 
       {formationId && <DossiersApprenants formationId={formationId} />}
 
-      <VisionneuseFichier apercu={apercu} onFermer={fermerApercu} />
+      <VisionneuseFichier apercu={apercu} onFermer={() => setApercu(null)} />
     </div>
   );
 }

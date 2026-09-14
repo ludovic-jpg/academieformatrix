@@ -1,10 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
@@ -25,10 +19,10 @@ const ONGLETS = [
   { to: "/intranet/formations", label: "Mes Formations" },
   { to: "/intranet/positionnement", label: "Test de Positionnement" },
   { to: "/intranet/acquis", label: "Évaluation des Acquis" },
-  { to: "/intranet/coffre", label: "Coffre-fort pédagogique" },
   { to: "/intranet/supports", label: "Mes supports de formation" },
   { to: "/intranet/budget", label: "Demande de budget" },
   { to: "/intranet/demande-formation", label: "Demande de formation" },
+  { to: "/intranet/coffre", label: "Coffre-fort pédagogique" },
 ] as const;
 
 function Intranet() {
@@ -68,9 +62,7 @@ function Intranet() {
 
   const verrouille = statut !== null && statut !== "validee" && !estAdmin;
   const banniere =
-    Object.entries(BANNIERES).find(([chemin]) =>
-      location.pathname.startsWith(chemin),
-    )?.[1] ?? null;
+    Object.entries(BANNIERES).find(([chemin]) => location.pathname.startsWith(chemin))?.[1] ?? null;
 
   const seDeconnecter = async () => {
     await queryClient.cancelQueries();
@@ -117,8 +109,7 @@ function Intranet() {
                 to={onglet.to}
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
                 activeProps={{
-                  className:
-                    "rounded-md px-3 py-2 text-sm font-bold text-primary bg-accent",
+                  className: "rounded-md px-3 py-2 text-sm font-bold text-primary bg-accent",
                 }}
               >
                 {onglet.label}
@@ -130,8 +121,7 @@ function Intranet() {
               to="/intranet/admin"
               className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent"
               activeProps={{
-                className:
-                  "rounded-md px-3 py-2 text-sm font-bold text-primary bg-accent",
+                className: "rounded-md px-3 py-2 text-sm font-bold text-primary bg-accent",
               }}
             >
               Administration

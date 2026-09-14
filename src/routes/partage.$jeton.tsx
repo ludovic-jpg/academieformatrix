@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { EnTeteFormatrix } from "@/components/EnTeteFormatrix";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VisionneuseFichier, type ApercuFichier } from "@/components/VisionneuseFichier";
-import { construireApercuScorm } from "@/lib/supports/scormPreview";
 import { consulterPartage } from "@/lib/partage.functions";
 
 export const Route = createFileRoute("/partage/$jeton")({
@@ -105,39 +104,13 @@ function Partage() {
   });
 
   const [apercu, setApercu] = useState<ApercuFichier | null>(null);
-  const [apercuUrlObjet, setApercuUrlObjet] = useState<string | null>(null);
   const [chargementApercu, setChargementApercu] = useState<string | null>(null);
-  const [erreurApercu, setErreurApercu] = useState<string | null>(null);
 
-  const fermerApercu = () => {
-    if (apercuUrlObjet) URL.revokeObjectURL(apercuUrlObjet);
-    setApercuUrlObjet(null);
-    setApercu(null);
-  };
-
-  /**
-   * Visionneuse en incrustation : les PDF s'affichent via leur URL signée ;
-   * le paquet SCORM est dézippé puis reconstruit en page HTML autonome.
-   */
-  const previsualiser = async (fichier: FichierPartageAffiche) => {
-    setErreurApercu(null);
+  /** Visionneuse en incrustation : le PDF s'affiche via son URL signée. */
+  const previsualiser = (fichier: FichierPartageAffiche) => {
     setChargementApercu(fichier.id);
-    try {
-      if (/\.zip$/i.test(fichier.nom)) {
-        const reponse = await fetch(fichier.url);
-        if (!reponse.ok) throw new Error("Le paquet n'a pas pu être téléchargé pour aperçu.");
-        const html = await construireApercuScorm(await reponse.blob());
-        const urlObjet = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-        setApercuUrlObjet(urlObjet);
-        setApercu({ titre: fichier.nom, url: urlObjet });
-      } else {
-        setApercu({ titre: fichier.nom, url: fichier.url });
-      }
-    } catch (e) {
-      setErreurApercu(e instanceof Error ? e.message : "Impossible de prévisualiser ce fichier.");
-    } finally {
-      setChargementApercu(null);
-    }
+    setApercu({ titre: fichier.nom, url: fichier.url });
+    setChargementApercu(null);
   };
 
   const fichiersGeneraux = (data?.fichiers ?? []).filter((f) => f.numeroModule === null);
@@ -168,7 +141,6 @@ function Partage() {
                 Aucun document partagé pour le moment.
               </p>
             )}
-            {erreurApercu && <p className="text-sm text-destructive">{erreurApercu}</p>}
           </CardContent>
         </Card>
 
@@ -215,7 +187,7 @@ function Partage() {
         )}
       </div>
 
-      <VisionneuseFichier apercu={apercu} onFermer={fermerApercu} />
+      <VisionneuseFichier apercu={apercu} onFermer={() => setApercu(null)} />
     </div>
   );
 }

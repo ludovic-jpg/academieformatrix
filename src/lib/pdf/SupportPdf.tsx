@@ -1,11 +1,4 @@
-import {
-  Document,
-  Font,
-  Page,
-  StyleSheet,
-  Text,
-  View,
-} from "@react-pdf/renderer";
+import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import { ORGANISME } from "@/config/organisme";
 import type { SlideSupport } from "@/lib/supports.functions";
@@ -49,9 +42,18 @@ const styles = StyleSheet.create({
   partie: { fontSize: 14, marginTop: 8, color: OR },
   barre: { height: 3, backgroundColor: BLEU, marginBottom: 16 },
   titreSlide: { fontSize: 20, fontWeight: 700, color: BLEU, marginBottom: 14 },
+  developpement: { fontSize: 11, lineHeight: 1.5, marginBottom: 16 },
+  encart: {
+    marginTop: 4,
+    padding: 12,
+    backgroundColor: "#F2F4FA",
+    borderWidth: 1,
+    borderColor: BLEU,
+  },
+  encartTitre: { fontSize: 11, fontWeight: 700, color: BLEU, marginBottom: 8 },
   puce: { flexDirection: "row", marginBottom: 6 },
   point: { color: BLEU, marginRight: 6 },
-  puceTexte: { flex: 1, lineHeight: 1.4 },
+  puceTexte: { flex: 1, lineHeight: 1.4, fontSize: 10 },
   commentaire: {
     marginTop: 18,
     paddingTop: 8,
@@ -100,16 +102,22 @@ export function SupportPdf({
         <Page key={index} size="A4" orientation="landscape" style={styles.page}>
           <View style={styles.barre} />
           <Text style={styles.titreSlide}>{slide.titre}</Text>
-          {slide.puces.map((puce, j) => (
-            <View key={j} style={styles.puce}>
-              <Text style={styles.point}>•</Text>
-              <Text style={styles.puceTexte}>{puce}</Text>
+          {slide.developpement ? (
+            <Text style={styles.developpement}>{slide.developpement}</Text>
+          ) : null}
+          {slide.puces.length > 0 ? (
+            <View style={styles.encart}>
+              <Text style={styles.encartTitre}>Points clés</Text>
+              {slide.puces.map((puce, j) => (
+                <View key={j} style={styles.puce}>
+                  <Text style={styles.point}>•</Text>
+                  <Text style={styles.puceTexte}>{puce}</Text>
+                </View>
+              ))}
             </View>
-          ))}
+          ) : null}
           {slide.commentaire ? (
-            <Text style={styles.commentaire}>
-              Note d'animation : {slide.commentaire}
-            </Text>
+            <Text style={styles.commentaire}>Note d'animation : {slide.commentaire}</Text>
           ) : null}
           <View style={styles.pied} fixed>
             <Text>{ORGANISME.raisonSociale}</Text>

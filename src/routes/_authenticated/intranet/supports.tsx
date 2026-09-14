@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { Download, Eye, Layers, Loader2, Package, Sparkles } from "lucide-react";
+import { BookOpen, Download, Eye, Layers, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,15 +17,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { genererSupport } from "@/lib/supports.functions";
 import { construirePptx, libellePartie, nomSupport, type DeckSupport } from "@/lib/supports/pptx";
 import { construireSupportPdf } from "@/lib/supports/export";
-import { construireScorm } from "@/lib/supports/scorm";
 import type { ModuleCours } from "@/lib/supports/cours";
 import type { Json } from "@/integrations/supabase/types";
 import { genererCoursApprofondi } from "@/lib/cours-claude.functions";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nomFichierSur } from "@/lib/storage";
 import { telechargerBlob } from "@/lib/documents";
 import { VisionneuseFichier, type ApercuFichier } from "@/components/VisionneuseFichier";
-import { construireApercuScorm } from "@/lib/supports/scormPreview";
 
 export const Route = createFileRoute("/_authenticated/intranet/supports")({
   component: Supports,
@@ -75,16 +72,15 @@ const PARTIES = ["theorie", "exercices"] as const;
 
 function Supports() {
   const genererSupportFn = useServerFn(genererSupport);
+  const genererCoursFn = useServerFn(genererCoursApprofondi);
   const [formations, setFormations] = useState<Formation[]>([]);
   const [formationId, setFormationId] = useState("");
   const [enCours, setEnCours] = useState<string | null>(null);
   const [progression, setProgression] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [fichiers, setFichiers] = useState<FichierSupport[]>([]);
-  const genererCoursFn = useServerFn(genererCoursApprofondi);
   const [coursEnrichi, setCoursEnrichi] = useState<ModuleCours[]>([]);
   const [apercu, setApercu] = useState<ApercuFichier | null>(null);
-  const [apercuUrlObjet, setApercuUrlObjet] = useState<string | null>(null);
   const [chargementApercu, setChargementApercu] = useState<string | null>(null);
 
   useEffect(() => {
@@ -137,16 +133,7 @@ function Supports() {
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
-  const fermerApercu = () => {
-    if (apercuUrlObjet) URL.revokeObjectURL(apercuUrlObjet);
-    setApercuUrlObjet(null);
-    setApercu(null);
-  };
-
-  /**
-   * Visionneuse en incrustation : les PDF s'affichent via leur URL signée ;
-   * le paquet SCORM est dézippé puis reconstruit en page HTML autonome.
-   */
+  /** Visionneuse en incrustation : le PDF s'affiche via son URL signée. */
   const previsualiser = async (fichier: FichierSupport) => {
     setErreur(null);
     setChargementApercu(fichier.id);
@@ -155,17 +142,7 @@ function Supports() {
         .from("coffre")
         .createSignedUrl(fichier.chemin, 300);
       if (error || !data) throw new Error("Impossible d'ouvrir ce support pour le moment.");
-
-      if (/\.zip$/i.test(fichier.nom)) {
-        const reponse = await fetch(data.signedUrl);
-        if (!reponse.ok) throw new Error("Le paquet n'a pas pu être téléchargé pour aperçu.");
-        const html = await construireApercuScorm(await reponse.blob());
-        const urlObjet = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-        setApercuUrlObjet(urlObjet);
-        setApercu({ titre: fichier.nom, url: urlObjet });
-      } else {
-        setApercu({ titre: fichier.nom, url: data.signedUrl });
-      }
+      setApercu({ titre: fichier.nom, url: data.signedUrl });
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "Impossible de prévisualiser ce support.");
     } finally {
@@ -284,31 +261,16 @@ function Supports() {
     }
   };
 
-  /** Dépose un fichier généré dans le coffre-fort du parcours. */
-  const deposerAuCoffre = async (nom: string, blob: Blob, userId: string, idFormation: string) => {
-    const chemin = `${userId}/${idFormation}/${Date.now()}-${nomFichierSur(nom)}`;
-    const { error: erreurDepot } = await supabase.storage.from("coffre").upload(chemin, blob);
-    if (erreurDepot) throw new Error(erreurDepot.message);
-    const { error: erreurLigne } = await supabase.from("coffre_fichiers").insert({
-      formateur_id: userId,
-      formation_id: idFormation,
-      nom,
-      chemin,
-      taille: blob.size,
-    });
-    if (erreurLigne) throw new Error(erreurLigne.message);
-  };
-
   /**
-   * Recherche théorique approfondie module par module, puis production
-   * du paquet SCORM 1.2 du parcours (aucun PowerPoint n'est généré ici :
-   * les supports PowerPoint se produisent depuis l'onglet « Supports
-   * PowerPoint »).
+   * Recherche théorique approfondie module par module : enrichit le
+   * contenu affiché aux apprenants dans leur espace personnel (cours
+   * interactif). Ne produit ni PowerPoint ni export : uniquement les
+   * données du cours, enregistrées en base.
    */
-  const lancerRechercheClaude = async () => {
+  const genererContenuApprenant = async () => {
     if (!formation) return;
     setErreur(null);
-    setEnCours("claude");
+    setEnCours("cours");
     setCoursEnrichi([]);
     try {
       const { data: utilisateur } = await supabase.auth.getUser();
@@ -341,23 +303,8 @@ function Supports() {
         );
         if (erreurCours) throw new Error(erreurCours.message);
       }
-
-      setProgression("Assemblage du module SCORM 1.2…");
-      const zip = await construireScorm({
-        titreFormation: formation.titre,
-        modules: produits,
-      });
-      await deposerAuCoffre(
-        `Parcours de formation - ${formation.titre} - Module e-learning SCORM 1.2.zip`,
-        zip,
-        utilisateur.user.id,
-        formation.id,
-      );
-      await chargerFichiers(formation.id);
     } catch (e) {
-      setErreur(
-        e instanceof Error ? e.message : "La recherche théorique et la génération ont échoué.",
-      );
+      setErreur(e instanceof Error ? e.message : "La recherche théorique a échoué.");
     } finally {
       setProgression(null);
       setEnCours(null);
@@ -375,226 +322,195 @@ function Supports() {
     {} as Record<string, typeof fichiers>,
   );
 
-  const contenuClassique = (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Mes supports de formation</CardTitle>
-          <CardDescription>
-            Choisissez un parcours : pour chaque module, l'assistant pédagogique produit un support
-            théorique et un support d'exercices de 15 diapositives. Le PDF est déposé
-            automatiquement dans le coffre-fort pédagogique du parcours ; le PowerPoint (éditable)
-            est téléchargé directement sur votre poste et n'est jamais archivé dans le coffre-fort.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Parcours de formation</Label>
-            <Select value={formationId} onValueChange={setFormationId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un parcours" />
-              </SelectTrigger>
-              <SelectContent>
-                {formations.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.titre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {modules.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button disabled={enCours !== null} onClick={produireTout}>
-                {enCours === "tout" ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Layers className="mr-2 h-4 w-4" />
-                )}
-                Générer les supports de l'ensemble de la formation
-              </Button>
-              {progression && (
-                <span className="text-sm text-muted-foreground">En cours : {progression}</span>
-              )}
-            </div>
-          )}
-          {erreur && <p className="text-sm text-destructive">{erreur}</p>}
-        </CardContent>
-      </Card>
-
-      {formation && modules.length === 0 && (
-        <p className="text-sm text-muted-foreground">Ce parcours ne contient aucun module.</p>
-      )}
-
-      {modules.map((mod, index) => (
-        <Card key={`${mod.titre}-${index}`}>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Module {index + 1} — {mod.titre}
-            </CardTitle>
-            <CardDescription>{(mod.points ?? []).slice(0, 4).join(" • ")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {PARTIES.map((partie) => (
-                <Button
-                  key={partie}
-                  variant="outline"
-                  size="sm"
-                  disabled={enCours !== null}
-                  onClick={() => produire(index, partie)}
-                >
-                  {enCours === `${index}-${partie}` ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
-                  )}
-                  Générer le support {libellePartie(partie).toLowerCase()}
-                </Button>
-              ))}
-            </div>
-            {(fichiersParModule[`Module ${index + 1}`] ?? []).length > 0 && (
-              <div className="space-y-2 border-t pt-4">
-                <p className="text-sm font-bold text-primary">Supports du module</p>
-                {(fichiersParModule[`Module ${index + 1}`] ?? []).map((f) => (
-                  <div
-                    key={f.id}
-                    className="flex flex-wrap items-center gap-2 rounded-md border p-3"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={chargementApercu === f.id}
-                      onClick={() => void previsualiser(f)}
-                    >
-                      {chargementApercu === f.id ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Eye className="mr-2 h-4 w-4" />
-                      )}
-                      Aperçu
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => void telecharger(f)}>
-                      <Download className="mr-2 h-4 w-4" /> Télécharger
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
-      {formation && (fichiersParModule["Général"] ?? []).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Supports du parcours</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(fichiersParModule["Général"] ?? []).map((f) => (
-              <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
-                <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={chargementApercu === f.id}
-                  onClick={() => void previsualiser(f)}
-                >
-                  {chargementApercu === f.id ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Eye className="mr-2 h-4 w-4" />
-                  )}
-                  Aperçu
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => void telecharger(f)}>
-                  <Download className="mr-2 h-4 w-4" /> Télécharger
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-
   return (
     <>
-      <Tabs defaultValue="classique" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="classique">Supports PowerPoint</TabsTrigger>
-          <TabsTrigger value="scorm">Générateur SCORM 1.2</TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mes supports de formation</CardTitle>
+            <CardDescription>
+              Choisissez un parcours : pour chaque module, l'assistant pédagogique produit un
+              support théorique et un support d'exercices de 15 diapositives, fondées sur une
+              recherche des concepts clés du domaine. Le PDF est déposé automatiquement dans le
+              coffre-fort pédagogique du parcours ; le PowerPoint (éditable) est téléchargé
+              directement sur votre poste et n'est jamais archivé dans le coffre-fort.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Parcours de formation</Label>
+              <Select value={formationId} onValueChange={setFormationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un parcours" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formations.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.titre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {modules.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button disabled={enCours !== null} onClick={produireTout}>
+                  {enCours === "tout" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Layers className="mr-2 h-4 w-4" />
+                  )}
+                  Générer les supports de l'ensemble de la formation
+                </Button>
+                {progression && (
+                  <span className="text-sm text-muted-foreground">En cours : {progression}</span>
+                )}
+              </div>
+            )}
+            {erreur && <p className="text-sm text-destructive">{erreur}</p>}
+          </CardContent>
+        </Card>
 
-        <TabsContent value="classique">{contenuClassique}</TabsContent>
+        {formation && modules.length === 0 && (
+          <p className="text-sm text-muted-foreground">Ce parcours ne contient aucun module.</p>
+        )}
 
-        <TabsContent value="scorm" className="space-y-6">
+        {modules.map((mod, index) => (
+          <Card key={`${mod.titre}-${index}`}>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Module {index + 1} — {mod.titre}
+              </CardTitle>
+              <CardDescription>{(mod.points ?? []).slice(0, 4).join(" • ")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {PARTIES.map((partie) => (
+                  <Button
+                    key={partie}
+                    variant="outline"
+                    size="sm"
+                    disabled={enCours !== null}
+                    onClick={() => produire(index, partie)}
+                  >
+                    {enCours === `${index}-${partie}` ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    Générer le support {libellePartie(partie).toLowerCase()}
+                  </Button>
+                ))}
+              </div>
+              {(fichiersParModule[`Module ${index + 1}`] ?? []).length > 0 && (
+                <div className="space-y-2 border-t pt-4">
+                  <p className="text-sm font-bold text-primary">Supports du module</p>
+                  {(fichiersParModule[`Module ${index + 1}`] ?? []).map((f) => (
+                    <div
+                      key={f.id}
+                      className="flex flex-wrap items-center gap-2 rounded-md border p-3"
+                    >
+                      <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={chargementApercu === f.id}
+                        onClick={() => void previsualiser(f)}
+                      >
+                        {chargementApercu === f.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Eye className="mr-2 h-4 w-4" />
+                        )}
+                        Aperçu
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => void telecharger(f)}>
+                        <Download className="mr-2 h-4 w-4" /> Télécharger
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+        {formation && (fichiersParModule["Général"] ?? []).length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Générateur SCORM 1.2</CardTitle>
+              <CardTitle className="text-base">Supports du parcours</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {(fichiersParModule["Général"] ?? []).map((f) => (
+                <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                  <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={chargementApercu === f.id}
+                    onClick={() => void previsualiser(f)}
+                  >
+                    {chargementApercu === f.id ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Eye className="mr-2 h-4 w-4" />
+                    )}
+                    Aperçu
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => void telecharger(f)}>
+                    <Download className="mr-2 h-4 w-4" /> Télécharger
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {formation && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Contenu interactif pour l'espace apprenant</CardTitle>
               <CardDescription>
-                L'assistant mène une recherche théorique approfondie sur chaque module pour produire
-                un contenu riche et un paquet SCORM 1.2 interactif, déposé dans le coffre-fort.
-                Aucun PowerPoint n'est généré ici — utilisez l'onglet « Supports PowerPoint » pour
-                cela.
+                Mène une recherche théorique approfondie sur chaque module et enrichit le cours
+                interactif consultable par les apprenants dans leur espace personnel. N'ajoute aucun
+                fichier au coffre-fort.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Parcours de formation</Label>
-                <Select value={formationId} onValueChange={setFormationId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un parcours" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formations.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.titre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {formation && (
-                <Button
-                  variant="default"
-                  disabled={enCours !== null || modules.length === 0}
-                  onClick={lancerRechercheClaude}
-                >
-                  {enCours === "claude" ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
-                  )}
-                  Lancer la recherche théorique &amp; génération SCORM
-                </Button>
+              <Button
+                variant="outline"
+                disabled={enCours !== null || modules.length === 0}
+                onClick={genererContenuApprenant}
+              >
+                {enCours === "cours" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <BookOpen className="mr-2 h-4 w-4" />
+                )}
+                Générer le contenu interactif
+              </Button>
+              {coursEnrichi.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {coursEnrichi.map((m, i) => (
+                    <Card key={i}>
+                      <CardHeader>
+                        <CardTitle className="text-sm">
+                          Module {i + 1} : {m.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground">
+                          {m.slides.length} diapositives approfondies générées.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
-              {progression && <p className="text-sm text-muted-foreground">{progression}</p>}
-              {erreur && <p className="text-sm text-destructive">{erreur}</p>}
             </CardContent>
           </Card>
-
-          {coursEnrichi.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-2">
-              {coursEnrichi.map((m, i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <CardTitle className="text-sm">
-                      Module {i + 1} : {m.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xs text-muted-foreground">
-                      {m.slides.length} diapositives approfondies générées.
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-      <VisionneuseFichier apercu={apercu} onFermer={fermerApercu} />
+        )}
+      </div>
+      <VisionneuseFichier apercu={apercu} onFermer={() => setApercu(null)} />
     </>
   );
 }

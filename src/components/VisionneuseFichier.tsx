@@ -8,7 +8,7 @@ export interface ApercuFichier {
   url: string;
 }
 
-/** Visionneuse en incrustation (PDF ou paquet SCORM prévisualisé) sans quitter la page. */
+/** Visionneuse de PDF en incrustation, sans quitter la page. */
 export function VisionneuseFichier({
   apercu,
   onFermer,

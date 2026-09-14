@@ -15,6 +15,7 @@ export type EntreeSupport = z.infer<typeof entree>;
 
 export interface SlideSupport {
   titre: string;
+  developpement: string;
   puces: string[];
   commentaire: string;
 }
@@ -32,12 +33,12 @@ function promptSysteme(data: EntreeSupport) {
       : "un support de formation consacré exclusivement à la PRATIQUE : consignes d'exercices, mises en situation réalistes, cas pratiques ancrés dans les méthodes et outils reconnus du domaine, questions de travail, corrigés commentés";
   return [
     `Tu es un ingénieur pédagogique francophone spécialisé dans la formation professionnelle conforme aux exigences Qualiopi.`,
-    `Avant de rédiger, mène une recherche théorique sur les concepts clés, les théories et les modèles de référence propres au module indiqué, afin de produire un contenu réellement approfondi et non générique.`,
-    `Tu conçois ${nature}, destiné à être projeté en diaporama.`,
+    `Avant de rédiger, mène une recherche théorique sur les concepts clés, les théories et les modèles de référence propres au module indiqué, afin de produire un contenu réellement approfondi et non générique — proscris tout contenu vague ou passe-partout qui pourrait s'appliquer à n'importe quel sujet.`,
+    `Tu conçois ${nature}, destiné à être projeté en diaporama puis remis en PDF aux apprenants.`,
     `Rédige exactement ${NB_SLIDES} diapositives pour le module indiqué, strictement fondées sur le titre du module et ses points de contenu, adaptées au niveau et au public fournis.`,
-    `Chaque diapositive comporte un titre court (moins de 80 caractères), 3 à 6 puces de style télégraphique (moins de 140 caractères chacune) qui intègrent les concepts clés identifiés et, lorsqu'ils existent, les théories ou auteurs de référence, ainsi qu'un commentaire d'animation pour le formateur (2 à 3 phrases) qui explicite ces concepts pour l'intervenant.`,
-    `La première diapositive introduit le module et ses objectifs, la dernière fait la synthèse.`,
-    `N'invente aucune donnée logistique (dates, prix, noms de personnes).`,
+    `Chaque diapositive comporte : un titre court (moins de 80 caractères) ; un champ "developpement" de 120 à 200 mots qui constitue le véritable contenu de la diapositive (explications précises, chiffres ou repères concrets, exemples réels, et — lorsqu'ils existent — les théories, modèles ou auteurs de référence cités nommément) ; 3 à 5 puces "puces" qui résument les points clés à retenir du développement (moins de 100 caractères chacune, jamais de simple redite du titre) ; un commentaire d'animation pour le formateur "commentaire" (2 à 3 phrases) qui donne des conseils d'animation ou des compléments non écrits à l'écran.`,
+    `La première diapositive introduit le module et ses objectifs, la dernière fait la synthèse et rappelle les points de vigilance.`,
+    `N'invente aucune donnée logistique (dates, prix, noms de personnes réelles de l'organisme).`,
     `Réponds uniquement en JSON valide, sans aucun texte avant ou après.`,
   ].join(" ");
 }
@@ -57,7 +58,7 @@ export const genererSupport = createServerFn({ method: "POST" })
         ...data.points.map((p) => `- ${p}`),
         `Niveau : ${data.niveau || "non précisé"}`,
         `Public concerné : ${data.publicConcerne || "non précisé"}`,
-        'Réponds exclusivement avec ce JSON strict : {"slides":[{"titre":"...","puces":["..."],"commentaire":"..."}]}',
+        'Réponds exclusivement avec ce JSON strict : {"slides":[{"titre":"...","developpement":"...","puces":["..."],"commentaire":"..."}]}',
       ].join("\n"),
     });
 
@@ -67,6 +68,7 @@ export const genererSupport = createServerFn({ method: "POST" })
       slides: z.array(
         z.object({
           titre: z.string(),
+          developpement: z.string().default(""),
           puces: z.array(z.string()),
           commentaire: z.string(),
         }),
