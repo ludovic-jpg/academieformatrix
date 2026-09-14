@@ -122,6 +122,56 @@ export async function genererAvecClaude(options: {
   return tentative.body;
 }
 
+/**
+ * Échappe les retours à la ligne et autres caractères de contrôle bruts
+ * trouvés à l'intérieur des chaînes JSON. Claude en insère parfois malgré
+ * la consigne de répondre en JSON strict (par ex. quand on lui demande des
+ * paragraphes avec retours à la ligne), ce qui casse JSON.parse.
+ */
+function assainirChainesJson(texte: string): string {
+  let resultat = "";
+  let dansChaine = false;
+  let echappement = false;
+  for (const car of texte) {
+    if (dansChaine) {
+      if (echappement) {
+        resultat += car;
+        echappement = false;
+        continue;
+      }
+      if (car === "\\") {
+        resultat += car;
+        echappement = true;
+        continue;
+      }
+      if (car === '"') {
+        dansChaine = false;
+        resultat += car;
+        continue;
+      }
+      if (car === "\n") {
+        resultat += "\\n";
+        continue;
+      }
+      if (car === "\r") {
+        resultat += "\\r";
+        continue;
+      }
+      if (car === "\t") {
+        resultat += "\\t";
+        continue;
+      }
+      resultat += car;
+      continue;
+    }
+    if (car === '"') {
+      dansChaine = true;
+    }
+    resultat += car;
+  }
+  return resultat;
+}
+
 /** Extrait le JSON d'une réponse éventuellement entourée de texte ou de balises. */
 export function extraireJsonClaude(texte: string): unknown {
   const nettoye = texte.replace(/```json|```/g, "").trim();
@@ -130,5 +180,10 @@ export function extraireJsonClaude(texte: string): unknown {
   if (debut < 0 || fin < debut) {
     throw new Error("La réponse de l'IA n'est pas un JSON valide.");
   }
-  return JSON.parse(nettoye.slice(debut, fin + 1));
+  const candidat = nettoye.slice(debut, fin + 1);
+  try {
+    return JSON.parse(candidat);
+  } catch {
+    return JSON.parse(assainirChainesJson(candidat));
+  }
 }

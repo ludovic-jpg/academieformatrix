@@ -1,23 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import {
-  Download,
-  Eye,
-  Layers,
-  Loader2,
-  Package,
-  Sparkles,
-} from "lucide-react";
+import { Download, Eye, Layers, Loader2, Package, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -28,13 +15,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { genererSupport } from "@/lib/supports.functions";
-import {
-  construirePptx,
-  libellePartie,
-  nomSupport,
-  type DeckSupport,
-} from "@/lib/supports/pptx";
-import { construirePptxEnrichi } from "@/lib/supports/pptx";
+import { construirePptx, libellePartie, nomSupport, type DeckSupport } from "@/lib/supports/pptx";
 import { construireSupportPdf } from "@/lib/supports/export";
 import { construireScorm } from "@/lib/supports/scorm";
 import type { ModuleCours } from "@/lib/supports/cours";
@@ -138,11 +119,7 @@ function Supports() {
   const ouvrir = async (fichier: FichierSupport, telechargement: boolean) => {
     const { data, error } = await supabase.storage
       .from("coffre")
-      .createSignedUrl(
-        fichier.chemin,
-        300,
-        telechargement ? { download: fichier.nom } : undefined,
-      );
+      .createSignedUrl(fichier.chemin, 300, telechargement ? { download: fichier.nom } : undefined);
     if (error || !data) {
       setErreur("Impossible d'ouvrir ce support pour le moment.");
       return;
@@ -151,10 +128,7 @@ function Supports() {
   };
 
   /** Génère un support (théorie ou exercices) et le dépose dans le coffre-fort. */
-  const produireUn = async (
-    indexModule: number,
-    partie: (typeof PARTIES)[number],
-  ) => {
+  const produireUn = async (indexModule: number, partie: (typeof PARTIES)[number]) => {
     if (!formation) return;
     const mod = modules[indexModule];
     if (!mod) return;
@@ -184,46 +158,34 @@ function Supports() {
       slides: contenu.slides,
     };
     const nom = nomSupport(deck);
-    const [pptx, pdf] = await Promise.all([
-      construirePptx(deck),
-      construireSupportPdf(deck),
-    ]);
+    const [pptx, pdf] = await Promise.all([construirePptx(deck), construireSupportPdf(deck)]);
 
     for (const [blob, extension] of [
       [pptx, "pptx"],
       [pdf, "pdf"],
     ] as const) {
       const chemin = `${utilisateur.user.id}/${formation.id}/${Date.now()}-${nomFichierSur(`${nom}.${extension}`)}`;
-      const { error: erreurDepot } = await supabase.storage
-        .from("coffre")
-        .upload(chemin, blob);
+      const { error: erreurDepot } = await supabase.storage.from("coffre").upload(chemin, blob);
       if (erreurDepot) throw new Error(erreurDepot.message);
-      const { error: erreurLigne } = await supabase
-        .from("coffre_fichiers")
-        .insert({
-          formateur_id: utilisateur.user.id,
-          formation_id: formation.id,
-          nom: `${nom}.${extension}`,
-          chemin,
-          taille: blob.size,
-        });
+      const { error: erreurLigne } = await supabase.from("coffre_fichiers").insert({
+        formateur_id: utilisateur.user.id,
+        formation_id: formation.id,
+        nom: `${nom}.${extension}`,
+        chemin,
+        taille: blob.size,
+      });
       if (erreurLigne) throw new Error(erreurLigne.message);
     }
   };
 
-  const produire = async (
-    indexModule: number,
-    partie: (typeof PARTIES)[number],
-  ) => {
+  const produire = async (indexModule: number, partie: (typeof PARTIES)[number]) => {
     setErreur(null);
     setEnCours(`${indexModule}-${partie}`);
     try {
       await produireUn(indexModule, partie);
       await chargerFichiers(formationId);
     } catch (e) {
-      setErreur(
-        e instanceof Error ? e.message : "La génération du support a échoué.",
-      );
+      setErreur(e instanceof Error ? e.message : "La génération du support a échoué.");
     } finally {
       setEnCours(null);
     }
@@ -248,9 +210,7 @@ function Supports() {
       }
     } catch (e) {
       setErreur(
-        e instanceof Error
-          ? e.message
-          : "La génération de l'ensemble des supports a échoué.",
+        e instanceof Error ? e.message : "La génération de l'ensemble des supports a échoué.",
       );
     } finally {
       setProgression(null);
@@ -259,32 +219,25 @@ function Supports() {
   };
 
   /** Dépose un fichier généré dans le coffre-fort du parcours. */
-  const deposerAuCoffre = async (
-    nom: string,
-    blob: Blob,
-    userId: string,
-    idFormation: string,
-  ) => {
+  const deposerAuCoffre = async (nom: string, blob: Blob, userId: string, idFormation: string) => {
     const chemin = `${userId}/${idFormation}/${Date.now()}-${nomFichierSur(nom)}`;
-    const { error: erreurDepot } = await supabase.storage
-      .from("coffre")
-      .upload(chemin, blob);
+    const { error: erreurDepot } = await supabase.storage.from("coffre").upload(chemin, blob);
     if (erreurDepot) throw new Error(erreurDepot.message);
-    const { error: erreurLigne } = await supabase
-        .from("coffre_fichiers")
-        .insert({
-          formateur_id: userId,
-          formation_id: idFormation,
-          nom,
-          chemin,
-          taille: blob.size,
-        });
+    const { error: erreurLigne } = await supabase.from("coffre_fichiers").insert({
+      formateur_id: userId,
+      formation_id: idFormation,
+      nom,
+      chemin,
+      taille: blob.size,
+    });
     if (erreurLigne) throw new Error(erreurLigne.message);
   };
 
   /**
    * Recherche théorique approfondie module par module, puis production
-   * des PowerPoint enrichis et du paquet SCORM 1.2 du parcours.
+   * du paquet SCORM 1.2 du parcours (aucun PowerPoint n'est généré ici :
+   * les supports PowerPoint se produisent depuis l'onglet « Supports
+   * PowerPoint »).
    */
   const lancerRechercheClaude = async () => {
     if (!formation) return;
@@ -299,9 +252,7 @@ function Supports() {
       const produits: ModuleCours[] = [];
       for (let i = 0; i < modules.length; i += 1) {
         const mod = modules[i]!;
-        setProgression(
-          `Recherche théorique — module ${i + 1}/${modules.length} : ${mod.titre}`,
-        );
+        setProgression(`Recherche théorique — module ${i + 1}/${modules.length} : ${mod.titre}`);
         const moduleCours = await genererCoursFn({
           data: {
             titreFormation: formation.titre,
@@ -312,27 +263,17 @@ function Supports() {
         produits.push(moduleCours);
         setCoursEnrichi([...produits]);
 
-        const { error: erreurCours } = await supabase.from("supports_cours").upsert({
-          formateur_id: utilisateur.user.id,
-          formation_id: formation.id,
-          numero_module: i + 1,
-          titre_module: moduleCours.title,
-          contenu: JSON.parse(JSON.stringify(moduleCours)) as Json,
-        }, { onConflict: "formation_id,numero_module" });
+        const { error: erreurCours } = await supabase.from("supports_cours").upsert(
+          {
+            formateur_id: utilisateur.user.id,
+            formation_id: formation.id,
+            numero_module: i + 1,
+            titre_module: moduleCours.title,
+            contenu: JSON.parse(JSON.stringify(moduleCours)) as Json,
+          },
+          { onConflict: "formation_id,numero_module" },
+        );
         if (erreurCours) throw new Error(erreurCours.message);
-
-        const pptx = await construirePptxEnrichi(
-          formation.titre,
-          moduleCours,
-          i + 1,
-        );
-        await deposerAuCoffre(
-          `Parcours de formation - ${formation.titre} - Module ${i + 1} - ${moduleCours.title} - Approfondi.pptx`,
-          pptx,
-          utilisateur.user.id,
-          formation.id,
-        );
-        await chargerFichiers(formation.id);
       }
 
       setProgression("Assemblage du module SCORM 1.2…");
@@ -349,9 +290,7 @@ function Supports() {
       await chargerFichiers(formation.id);
     } catch (e) {
       setErreur(
-        e instanceof Error
-          ? e.message
-          : "La recherche théorique et la génération ont échoué.",
+        e instanceof Error ? e.message : "La recherche théorique et la génération ont échoué.",
       );
     } finally {
       setProgression(null);
@@ -359,13 +298,16 @@ function Supports() {
     }
   };
 
-  const fichiersParModule = fichiers.reduce((acc, f) => {
-    const match = f.nom.match(/Module ([0-9]+)/);
-    const mod = match ? "Module " + match[1] : "Général";
-    if (!acc[mod]) acc[mod] = [];
-    acc[mod].push(f);
-    return acc;
-  }, {} as Record<string, typeof fichiers>);
+  const fichiersParModule = fichiers.reduce(
+    (acc, f) => {
+      const match = f.nom.match(/Module ([0-9]+)/);
+      const mod = match ? "Module " + match[1] : "Général";
+      if (!acc[mod]) acc[mod] = [];
+      acc[mod].push(f);
+      return acc;
+    },
+    {} as Record<string, typeof fichiers>,
+  );
 
   const contenuClassique = (
     <div className="space-y-6">
@@ -373,10 +315,9 @@ function Supports() {
         <CardHeader>
           <CardTitle>Mes supports de formation</CardTitle>
           <CardDescription>
-            Choisissez un parcours : pour chaque module, l'assistant pédagogique
-            produit un support théorique et un support d'exercices de 15
-            diapositives, en PowerPoint et en PDF, déposés automatiquement dans
-            le coffre-fort pédagogique du parcours.
+            Choisissez un parcours : pour chaque module, l'assistant pédagogique produit un support
+            théorique et un support d'exercices de 15 diapositives, en PowerPoint et en PDF, déposés
+            automatiquement dans le coffre-fort pédagogique du parcours.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -406,9 +347,7 @@ function Supports() {
                 Générer les supports de l'ensemble de la formation
               </Button>
               {progression && (
-                <span className="text-sm text-muted-foreground">
-                  En cours : {progression}
-                </span>
+                <span className="text-sm text-muted-foreground">En cours : {progression}</span>
               )}
             </div>
           )}
@@ -417,9 +356,7 @@ function Supports() {
       </Card>
 
       {formation && modules.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Ce parcours ne contient aucun module.
-        </p>
+        <p className="text-sm text-muted-foreground">Ce parcours ne contient aucun module.</p>
       )}
 
       {modules.map((mod, index) => (
@@ -428,9 +365,7 @@ function Supports() {
             <CardTitle className="text-base">
               Module {index + 1} — {mod.titre}
             </CardTitle>
-            <CardDescription>
-              {(mod.points ?? []).slice(0, 4).join(" • ")}
-            </CardDescription>
+            <CardDescription>{(mod.points ?? []).slice(0, 4).join(" • ")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -455,7 +390,10 @@ function Supports() {
               <div className="space-y-2 border-t pt-4">
                 <p className="text-sm font-bold text-primary">Supports du module</p>
                 {(fichiersParModule[`Module ${index + 1}`] ?? []).map((f) => (
-                  <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                  <div
+                    key={f.id}
+                    className="flex flex-wrap items-center gap-2 rounded-md border p-3"
+                  >
                     <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
                     <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}>
                       <Eye className="mr-2 h-4 w-4" /> Aperçu
@@ -472,13 +410,19 @@ function Supports() {
       ))}
       {formation && (fichiersParModule["Général"] ?? []).length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Supports du parcours</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Supports du parcours</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-2">
             {(fichiersParModule["Général"] ?? []).map((f) => (
               <div key={f.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
                 <span className="min-w-0 flex-1 truncate text-sm">{f.nom}</span>
-                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}><Eye className="mr-2 h-4 w-4" /> Aperçu</Button>
-                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, true)}><Download className="mr-2 h-4 w-4" /> Télécharger</Button>
+                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, false)}>
+                  <Eye className="mr-2 h-4 w-4" /> Aperçu
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => ouvrir(f, true)}>
+                  <Download className="mr-2 h-4 w-4" /> Télécharger
+                </Button>
               </div>
             ))}
           </CardContent>
@@ -491,9 +435,7 @@ function Supports() {
     <Tabs defaultValue="classique" className="space-y-6">
       <TabsList>
         <TabsTrigger value="classique">Supports PowerPoint</TabsTrigger>
-        <TabsTrigger value="scorm">
-          Générateur SCORM 1.2 &amp; PPT amélioré
-        </TabsTrigger>
+        <TabsTrigger value="scorm">Générateur SCORM 1.2</TabsTrigger>
       </TabsList>
 
       <TabsContent value="classique">{contenuClassique}</TabsContent>
@@ -501,9 +443,11 @@ function Supports() {
       <TabsContent value="scorm" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Générateur SCORM 1.2 &amp; PPT amélioré</CardTitle>
+            <CardTitle>Générateur SCORM 1.2</CardTitle>
             <CardDescription>
-              L'assistant mène une recherche théorique approfondie sur chaque module pour produire un contenu riche, un PowerPoint "premium" et un paquet SCORM interactif.
+              L'assistant mène une recherche théorique approfondie sur chaque module pour produire
+              un contenu riche et un paquet SCORM 1.2 interactif, déposé dans le coffre-fort. Aucun
+              PowerPoint n'est généré ici — utilisez l'onglet « Supports PowerPoint » pour cela.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -536,9 +480,7 @@ function Supports() {
                 Lancer la recherche théorique &amp; génération SCORM
               </Button>
             )}
-            {progression && (
-              <p className="text-sm text-muted-foreground">{progression}</p>
-            )}
+            {progression && <p className="text-sm text-muted-foreground">{progression}</p>}
             {erreur && <p className="text-sm text-destructive">{erreur}</p>}
           </CardContent>
         </Card>

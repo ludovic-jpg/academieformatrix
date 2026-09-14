@@ -28,17 +28,24 @@ const NB_SLIDES = 15;
 function promptSysteme(data: EntreeSupport) {
   const nature =
     data.partie === "theorie"
-      ? "un support de formation THÉORIQUE : apports de contenu, définitions, méthodes, repères clés, exemples illustratifs"
-      : "un support de formation consacré exclusivement à la PRATIQUE : consignes d'exercices, mises en situation, cas pratiques, questions de travail, corrigés commentés";
-  return `Tu es un ingénieur pédagogique francophone spécialisé dans la formation professionnelle conforme aux exigences Qualiopi. Tu conçois ${nature}, destiné à être projeté en diaporama. Rédige exactement ${NB_SLIDES} diapositives pour le module indiqué, strictement fondées sur le titre du module et ses points de contenu, adaptées au niveau et au public fournis. Chaque diapositive comporte un titre court (moins de 80 caractères), 3 à 6 puces de style télégraphique (moins de 140 caractères chacune) et un commentaire d'animation pour le formateur (2 à 3 phrases). La première diapositive introduit le module et ses objectifs, la dernière fait la synthèse. N'invente aucune donnée logistique (dates, prix, noms de personnes). Réponds uniquement en JSON valide, sans aucun texte avant ou après.`;
+      ? "un support de formation THÉORIQUE : apports de contenu approfondis, définitions précises, concepts clés, théories et modèles de référence du domaine, repères chiffrés, exemples illustratifs concrets"
+      : "un support de formation consacré exclusivement à la PRATIQUE : consignes d'exercices, mises en situation réalistes, cas pratiques ancrés dans les méthodes et outils reconnus du domaine, questions de travail, corrigés commentés";
+  return [
+    `Tu es un ingénieur pédagogique francophone spécialisé dans la formation professionnelle conforme aux exigences Qualiopi.`,
+    `Avant de rédiger, mène une recherche théorique sur les concepts clés, les théories et les modèles de référence propres au module indiqué, afin de produire un contenu réellement approfondi et non générique.`,
+    `Tu conçois ${nature}, destiné à être projeté en diaporama.`,
+    `Rédige exactement ${NB_SLIDES} diapositives pour le module indiqué, strictement fondées sur le titre du module et ses points de contenu, adaptées au niveau et au public fournis.`,
+    `Chaque diapositive comporte un titre court (moins de 80 caractères), 3 à 6 puces de style télégraphique (moins de 140 caractères chacune) qui intègrent les concepts clés identifiés et, lorsqu'ils existent, les théories ou auteurs de référence, ainsi qu'un commentaire d'animation pour le formateur (2 à 3 phrases) qui explicite ces concepts pour l'intervenant.`,
+    `La première diapositive introduit le module et ses objectifs, la dernière fait la synthèse.`,
+    `N'invente aucune donnée logistique (dates, prix, noms de personnes).`,
+    `Réponds uniquement en JSON valide, sans aucun texte avant ou après.`,
+  ].join(" ");
 }
 
 export const genererSupport = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => entree.parse(input))
   .handler(async ({ data }): Promise<ContenuSupport> => {
-    const { genererAvecClaude, extraireJsonClaude } = await import(
-      "./claude.server"
-    );
+    const { genererAvecClaude, extraireJsonClaude } = await import("./claude.server");
 
     const reponse = await genererAvecClaude({
       systeme: promptSysteme(data),

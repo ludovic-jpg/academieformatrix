@@ -86,7 +86,7 @@ export const genererCoursApprofondi = createServerFn({ method: "POST" })
     const texte = await genererAvecClaude({
       systeme: "",
       message: prompt(data),
-      maxTokens: 8000,
+      maxTokens: 12000,
     });
 
     let brut: unknown;
