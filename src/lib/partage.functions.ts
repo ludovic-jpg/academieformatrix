@@ -6,10 +6,16 @@ export interface FichierPartage {
   nom: string;
   taille: number;
   url: string;
+  numeroModule: number | null;
+}
+
+export interface ModulePartage {
+  titre: string;
 }
 
 export interface ContenuPartage {
   titreFormation: string;
+  modules: ModulePartage[];
   fichiers: FichierPartage[];
 }
 
@@ -23,9 +29,7 @@ export const consulterPartage = createServerFn({ method: "POST" })
     z.object({ jeton: z.string().trim().min(10).max(100) }).parse(input),
   )
   .handler(async ({ data }): Promise<ContenuPartage> => {
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: partage, error: erreurPartage } = await supabaseAdmin
       .from("partages_coffre")
@@ -40,9 +44,14 @@ export const consulterPartage = createServerFn({ method: "POST" })
 
     const { data: formation } = await supabaseAdmin
       .from("formations")
-      .select("titre")
+      .select("titre, programme")
       .eq("id", partage.formation_id)
       .maybeSingle();
+
+    const programme = formation?.programme as { modules?: { titre: string }[] } | null;
+    const modules: ModulePartage[] = (programme?.modules ?? []).map((m) => ({
+      titre: m.titre,
+    }));
 
     const { data: fichiers, error: erreurFichiers } = await supabaseAdmin
       .from("coffre_fichiers")
@@ -54,21 +63,26 @@ export const consulterPartage = createServerFn({ method: "POST" })
 
     const resultats: FichierPartage[] = [];
     for (const fichier of fichiers ?? []) {
+      // Le coffre-fort partagé ne contient que des PDF, jamais de PowerPoint.
+      if (/\.pptx?$/i.test(fichier.nom)) continue;
       const { data: signe } = await supabaseAdmin.storage
         .from("coffre")
         .createSignedUrl(fichier.chemin, 60 * 60);
       if (signe?.signedUrl) {
+        const correspondance = fichier.nom.match(/Module ([0-9]+)/);
         resultats.push({
           id: fichier.id,
           nom: fichier.nom,
           taille: Number(fichier.taille ?? 0),
           url: signe.signedUrl,
+          numeroModule: correspondance ? Number(correspondance[1]) : null,
         });
       }
     }
 
     return {
       titreFormation: formation?.titre ?? "Formation",
+      modules,
       fichiers: resultats,
     };
   });

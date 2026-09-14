@@ -23,6 +23,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { genererCoursApprofondi } from "@/lib/cours-claude.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nomFichierSur } from "@/lib/storage";
+import { telechargerBlob } from "@/lib/documents";
 
 export const Route = createFileRoute("/_authenticated/intranet/supports")({
   component: Supports,
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/intranet/supports")({
       {
         property: "og:description",
         content:
-          "Génération IA des supports PowerPoint et PDF par module, déposés dans le coffre-fort pédagogique.",
+          "Génération IA des supports PowerPoint et PDF par module ; seuls les PDF sont archivés dans le coffre-fort pédagogique.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -106,7 +107,11 @@ function Supports() {
       .eq("formation_id", idFormation)
       .order("created_at", { ascending: false });
     const tous = (data ?? []) as unknown as FichierSupport[];
-    setFichiers(tous.filter((f) => f.nom.startsWith("Parcours de formation - ")));
+    // Le coffre-fort ne conserve que les PDF : les PowerPoint sont
+    // téléchargés directement, jamais archivés (voir produireUn).
+    setFichiers(
+      tous.filter((f) => f.nom.startsWith("Parcours de formation - ") && !/\.pptx?$/i.test(f.nom)),
+    );
   }, []);
 
   useEffect(() => {
@@ -127,11 +132,19 @@ function Supports() {
     window.open(data.signedUrl, "_blank", "noopener");
   };
 
-  /** Génère un support (théorie ou exercices) et le dépose dans le coffre-fort. */
-  const produireUn = async (indexModule: number, partie: (typeof PARTIES)[number]) => {
-    if (!formation) return;
+  /**
+   * Génère un support (théorie ou exercices) : seul le PDF est déposé dans
+   * le coffre-fort pédagogique (qui ne doit contenir que des PDF) ; le
+   * PowerPoint, lui, est retourné à l'appelant pour être téléchargé
+   * directement, jamais archivé.
+   */
+  const produireUn = async (
+    indexModule: number,
+    partie: (typeof PARTIES)[number],
+  ): Promise<{ nom: string; pptx: Blob }> => {
+    if (!formation) throw new Error("Aucun parcours sélectionné.");
     const mod = modules[indexModule];
-    if (!mod) return;
+    if (!mod) throw new Error("Module introuvable.");
 
     const { data: utilisateur } = await supabase.auth.getUser();
     if (!utilisateur.user) {
@@ -160,29 +173,27 @@ function Supports() {
     const nom = nomSupport(deck);
     const [pptx, pdf] = await Promise.all([construirePptx(deck), construireSupportPdf(deck)]);
 
-    for (const [blob, extension] of [
-      [pptx, "pptx"],
-      [pdf, "pdf"],
-    ] as const) {
-      const chemin = `${utilisateur.user.id}/${formation.id}/${Date.now()}-${nomFichierSur(`${nom}.${extension}`)}`;
-      const { error: erreurDepot } = await supabase.storage.from("coffre").upload(chemin, blob);
-      if (erreurDepot) throw new Error(erreurDepot.message);
-      const { error: erreurLigne } = await supabase.from("coffre_fichiers").insert({
-        formateur_id: utilisateur.user.id,
-        formation_id: formation.id,
-        nom: `${nom}.${extension}`,
-        chemin,
-        taille: blob.size,
-      });
-      if (erreurLigne) throw new Error(erreurLigne.message);
-    }
+    const chemin = `${utilisateur.user.id}/${formation.id}/${Date.now()}-${nomFichierSur(`${nom}.pdf`)}`;
+    const { error: erreurDepot } = await supabase.storage.from("coffre").upload(chemin, pdf);
+    if (erreurDepot) throw new Error(erreurDepot.message);
+    const { error: erreurLigne } = await supabase.from("coffre_fichiers").insert({
+      formateur_id: utilisateur.user.id,
+      formation_id: formation.id,
+      nom: `${nom}.pdf`,
+      chemin,
+      taille: pdf.size,
+    });
+    if (erreurLigne) throw new Error(erreurLigne.message);
+
+    return { nom: `${nom}.pptx`, pptx };
   };
 
   const produire = async (indexModule: number, partie: (typeof PARTIES)[number]) => {
     setErreur(null);
     setEnCours(`${indexModule}-${partie}`);
     try {
-      await produireUn(indexModule, partie);
+      const { nom, pptx } = await produireUn(indexModule, partie);
+      telechargerBlob(nom, pptx);
       await chargerFichiers(formationId);
     } catch (e) {
       setErreur(e instanceof Error ? e.message : "La génération du support a échoué.");
@@ -191,12 +202,18 @@ function Supports() {
     }
   };
 
-  /** Génère d'un seul coup les deux supports de chacun des modules du parcours. */
+  /**
+   * Génère d'un seul coup les deux supports de chacun des modules du
+   * parcours. Les PDF sont déposés au coffre-fort au fil de l'eau ; les
+   * PowerPoint sont regroupés dans une seule archive ZIP téléchargée à
+   * la fin, pour éviter d'enchaîner des dizaines de téléchargements.
+   */
   const produireTout = async () => {
     setErreur(null);
     setEnCours("tout");
     const total = modules.length * PARTIES.length;
     let fait = 0;
+    const pptxCollectes: { nom: string; pptx: Blob }[] = [];
     try {
       for (let i = 0; i < modules.length; i += 1) {
         for (const partie of PARTIES) {
@@ -204,9 +221,17 @@ function Supports() {
           setProgression(
             `Module ${i + 1} — ${libellePartie(partie).toLowerCase()} (${fait}/${total})`,
           );
-          await produireUn(i, partie);
+          pptxCollectes.push(await produireUn(i, partie));
           await chargerFichiers(formationId);
         }
+      }
+      if (pptxCollectes.length > 0) {
+        setProgression("Préparation de l'archive PowerPoint…");
+        const { default: JSZip } = await import("jszip");
+        const zip = new JSZip();
+        for (const { nom, pptx } of pptxCollectes) zip.file(nom, pptx);
+        const archive = await zip.generateAsync({ type: "blob" });
+        telechargerBlob(`Supports PowerPoint - ${formation?.titre ?? ""}.zip`, archive);
       }
     } catch (e) {
       setErreur(
@@ -316,8 +341,9 @@ function Supports() {
           <CardTitle>Mes supports de formation</CardTitle>
           <CardDescription>
             Choisissez un parcours : pour chaque module, l'assistant pédagogique produit un support
-            théorique et un support d'exercices de 15 diapositives, en PowerPoint et en PDF, déposés
-            automatiquement dans le coffre-fort pédagogique du parcours.
+            théorique et un support d'exercices de 15 diapositives. Le PDF est déposé
+            automatiquement dans le coffre-fort pédagogique du parcours ; le PowerPoint (éditable)
+            est téléchargé directement sur votre poste et n'est jamais archivé dans le coffre-fort.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

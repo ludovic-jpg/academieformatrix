@@ -1,5 +1,15 @@
 import { avecRubriquesFixes, type ProgrammeFormation } from "@/config/programme";
 
+/** Déclenche le téléchargement d'un blob quelconque dans le navigateur. */
+export function telechargerBlob(nom: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = nom;
+  lien.click();
+  URL.revokeObjectURL(url);
+}
+
 /** Télécharge le programme au format PDF (charte Formatrix). */
 export async function telechargerProgrammePdf(programme: ProgrammeFormation) {
   // La librairie PDF s'appuie sur Buffer pour décoder le logo.
@@ -10,9 +20,7 @@ export async function telechargerProgrammePdf(programme: ProgrammeFormation) {
     import("@react-pdf/renderer"),
     import("@/lib/pdf/ProgrammePdf"),
   ]);
-  const blob = await pdf(
-    <ProgrammePdf programme={avecRubriquesFixes(programme)} />,
-  ).toBlob();
+  const blob = await pdf(<ProgrammePdf programme={avecRubriquesFixes(programme)} />).toBlob();
   const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
   lien.href = url;
@@ -67,9 +75,7 @@ export async function telechargerRecueilPdf(
     import("@react-pdf/renderer"),
     import("@/lib/pdf/RecueilPdf"),
   ]);
-  const blob = await pdf(
-    <RecueilPdf infos={infos} {...(reponses ? { reponses } : {})} />,
-  ).toBlob();
+  const blob = await pdf(<RecueilPdf infos={infos} {...(reponses ? { reponses } : {})} />).toBlob();
   const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
   lien.href = url;

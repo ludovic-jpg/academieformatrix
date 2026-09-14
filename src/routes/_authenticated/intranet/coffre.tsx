@@ -1,15 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Copy, Link2, Loader2, Trash2, Upload } from "lucide-react";
+import { Copy, Download, Eye, Link2, Loader2, Trash2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,9 +21,15 @@ export const Route = createFileRoute("/_authenticated/intranet/coffre")({
   component: Coffre,
 });
 
+interface ModuleProgramme {
+  titre: string;
+  points: string[];
+}
+
 interface Formation {
   id: string;
   titre: string;
+  programme: { modules?: ModuleProgramme[] } | null;
 }
 
 interface Fichier {
@@ -37,6 +37,12 @@ interface Fichier {
   nom: string;
   chemin: string;
   taille: number;
+}
+
+function formatTaille(octets: number) {
+  if (octets < 1024) return `${octets} o`;
+  if (octets < 1024 * 1024) return `${Math.round(octets / 1024)} Ko`;
+  return `${(octets / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
 interface Partage {
@@ -75,10 +81,10 @@ function Coffre() {
       if (!utilisateur.user) return;
       const { data } = await supabase
         .from("formations")
-        .select("id, titre")
+        .select("id, titre, programme")
         .eq("formateur_id", utilisateur.user.id)
         .order("created_at", { ascending: false });
-      setFormations((data ?? []) as Formation[]);
+      setFormations((data ?? []) as unknown as Formation[]);
     })();
   }, []);
 
@@ -88,7 +94,10 @@ function Coffre() {
       .select("id, nom, chemin, taille")
       .eq("formation_id", id)
       .order("created_at", { ascending: true });
-    setFichiers((fichiersData ?? []) as unknown as Fichier[]);
+    // Le coffre-fort ne doit contenir que des PDF : les éventuels PowerPoint
+    // déposés avant cette règle restent en base mais ne sont plus affichés.
+    const tous = (fichiersData ?? []) as unknown as Fichier[];
+    setFichiers(tous.filter((f) => !/\.pptx?$/i.test(f.nom)));
 
     const { data: questionnairesData } = await supabase
       .from("questionnaires")
@@ -131,10 +140,28 @@ function Coffre() {
     await chargerFormation(id);
   };
 
+  const ouvrir = async (fichier: Fichier, telechargement: boolean) => {
+    const { data, error } = await supabase.storage
+      .from("coffre")
+      .createSignedUrl(fichier.chemin, 300, telechargement ? { download: fichier.nom } : undefined);
+    if (error || !data) {
+      setErreur("Impossible d'ouvrir ce fichier pour le moment.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
   const deposer = async (fichier: File) => {
     if (!formationId) return;
     setEnvoi(true);
     setErreur(null);
+    if (/\.pptx?$/i.test(fichier.name)) {
+      setErreur(
+        "Les fichiers PowerPoint ne sont pas acceptés dans le coffre-fort : déposez la version PDF finalisée.",
+      );
+      setEnvoi(false);
+      return;
+    }
     if (fichier.size > 50 * 1024 * 1024) {
       setErreur("Ce fichier dépasse 50 Mo : réduisez-le avant de le déposer.");
       setEnvoi(false);
@@ -147,9 +174,7 @@ function Coffre() {
       return;
     }
     const chemin = `${utilisateur.user.id}/${formationId}/${Date.now()}-${nomFichierSur(fichier.name)}`;
-    const { error: erreurUpload } = await supabase.storage
-      .from("coffre")
-      .upload(chemin, fichier);
+    const { error: erreurUpload } = await supabase.storage.from("coffre").upload(chemin, fichier);
     if (erreurUpload) {
       setErreur("Le dépôt a échoué : " + erreurUpload.message);
       setEnvoi(false);
@@ -187,10 +212,7 @@ function Coffre() {
 
   const revoquer = async () => {
     if (!partage) return;
-    await supabase
-      .from("partages_coffre")
-      .update({ actif: false })
-      .eq("id", partage.id);
+    await supabase.from("partages_coffre").update({ actif: false }).eq("id", partage.id);
     await chargerFormation(formationId);
   };
 
@@ -198,14 +220,67 @@ function Coffre() {
     ? `${typeof window === "undefined" ? "" : window.location.origin}/partage/${partage.jeton}`
     : "";
 
+  const formation = formations.find((f) => f.id === formationId) ?? null;
+  const modules = formation?.programme?.modules ?? [];
+
+  const fichiersParModule = fichiers.reduce(
+    (acc, f) => {
+      const match = f.nom.match(/Module ([0-9]+)/);
+      const cle = match ? match[1]! : "general";
+      if (!acc[cle]) acc[cle] = [];
+      acc[cle].push(f);
+      return acc;
+    },
+    {} as Record<string, Fichier[]>,
+  );
+  const fichiersGeneraux = fichiersParModule["general"] ?? [];
+
+  const ligneFichier = (fichier: Fichier) => (
+    <div
+      key={fichier.id}
+      className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{fichier.nom}</p>
+        <p className="text-xs text-muted-foreground">{formatTaille(fichier.taille)}</p>
+      </div>
+      <div className="flex shrink-0 gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Aperçu de ${fichier.nom}`}
+          onClick={() => void ouvrir(fichier, false)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Télécharger ${fichier.nom}`}
+          onClick={() => void ouvrir(fichier, true)}
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Supprimer ${fichier.nom}`}
+          onClick={() => void supprimer(fichier)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-primary">Coffre-fort pédagogique</CardTitle>
           <CardDescription>
-            Déposez vos supports par formation. Ils restent privés tant que vous
-            ne créez pas de lien de partage.
+            Choisissez une formation pour consulter ses documents, classés par module. Seuls les PDF
+            y sont archivés ; ils restent privés tant que vous ne créez pas de lien de partage.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -225,14 +300,61 @@ function Coffre() {
             </Select>
             {formations.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                Enregistrez d'abord une formation dans l'onglet « Mes
-                Formations ».
+                Enregistrez d'abord une formation dans l'onglet « Mes Formations ».
               </p>
             )}
           </div>
+          {erreur && <p className="text-xs font-medium text-destructive">{erreur}</p>}
+        </CardContent>
+      </Card>
 
-          {formationId && (
-            <>
+      {formation && (
+        <>
+          <div>
+            <h2 className="text-2xl font-bold text-primary">{formation.titre}</h2>
+            <p className="text-sm text-muted-foreground">
+              Coffre-fort pédagogique — documents classés par module
+            </p>
+          </div>
+
+          {modules.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Ce parcours ne contient aucun module ; les documents déposés apparaissent dans la
+              section « Documents généraux » ci-dessous.
+            </p>
+          )}
+
+          {modules.map((mod, index) => {
+            const liste = fichiersParModule[String(index + 1)] ?? [];
+            return (
+              <Card key={`${mod.titre}-${index}`}>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Module {index + 1} — {mod.titre}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {liste.length > 0 ? (
+                    liste.map(ligneFichier)
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Aucun support déposé pour ce module.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Documents généraux</CardTitle>
+              <CardDescription>
+                Paquet SCORM, pièces déposées manuellement et documents rattachés automatiquement au
+                parcours.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
                 <Input
                   type="file"
@@ -251,29 +373,15 @@ function Coffre() {
                 )}
               </div>
 
-              <ul className="space-y-2">
-                {fichiers.map((fichier) => (
-                  <li
-                    key={fichier.id}
-                    className="flex items-center justify-between gap-2 rounded-md border p-3 text-sm"
-                  >
-                    <span className="truncate">{fichier.nom}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Supprimer ${fichier.nom}`}
-                      onClick={() => void supprimer(fichier)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-                {fichiers.length === 0 && (
+              <div className="space-y-2">
+                {fichiersGeneraux.length > 0 ? (
+                  fichiersGeneraux.map(ligneFichier)
+                ) : (
                   <p className="text-sm text-muted-foreground">
-                    Aucun fichier déposé pour cette formation.
+                    Aucun document général déposé pour cette formation.
                   </p>
                 )}
-              </ul>
+              </div>
 
               <div className="rounded-md border p-4">
                 <p className="text-sm font-bold text-primary">
@@ -291,9 +399,7 @@ function Coffre() {
                       <li key={type}>
                         {libelle} :{" "}
                         {q ? (
-                          <span className="font-medium text-primary">
-                            {q.titre}
-                          </span>
+                          <span className="font-medium text-primary">{q.titre}</span>
                         ) : (
                           "à générer dans l'onglet dédié"
                         )}
@@ -302,24 +408,18 @@ function Coffre() {
                   })}
                 </ul>
               </div>
-            </>
-          )}
-
-          {erreur && (
-            <p className="text-xs font-medium text-destructive">{erreur}</p>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {formationId && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-primary">
-              Partage avec les apprenants
-            </CardTitle>
+            <CardTitle className="text-primary">Partage avec les apprenants</CardTitle>
             <CardDescription>
-              Un lien de consultation en lecture seule, sans création de compte,
-              limité aux fichiers de cette formation.
+              Un lien de consultation en lecture seule, sans création de compte, limité aux fichiers
+              de cette formation.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
