@@ -172,18 +172,70 @@ function assainirChainesJson(texte: string): string {
   return resultat;
 }
 
+/**
+ * Répare un JSON tronqué (réponse coupée par la limite de tokens) : on
+ * revient au dernier élément complet puis on referme les structures ouvertes.
+ */
+function reparerJsonTronque(texte: string): string | null {
+  const pile: string[] = [];
+  let dansChaine = false;
+  let echappement = false;
+  let coupe = -1;
+  let pileCoupe: string[] = [];
+
+  for (let i = 0; i < texte.length; i++) {
+    const c = texte[i]!;
+    if (dansChaine) {
+      if (echappement) echappement = false;
+      else if (c === "\\") echappement = true;
+      else if (c === '"') dansChaine = false;
+      continue;
+    }
+    if (c === '"') {
+      dansChaine = true;
+      continue;
+    }
+    if (c === "{" || c === "[") {
+      pile.push(c === "{" ? "}" : "]");
+      continue;
+    }
+    if (c === "}" || c === "]") {
+      pile.pop();
+      if (pile.length > 0) {
+        coupe = i + 1;
+        pileCoupe = [...pile];
+      }
+      continue;
+    }
+  }
+
+  if (coupe < 0) return null;
+  return texte.slice(0, coupe) + pileCoupe.reverse().join("");
+}
+
 /** Extrait le JSON d'une réponse éventuellement entourée de texte ou de balises. */
 export function extraireJsonClaude(texte: string): unknown {
   const nettoye = texte.replace(/```json|```/g, "").trim();
   const debut = nettoye.indexOf("{");
-  const fin = nettoye.lastIndexOf("}");
-  if (debut < 0 || fin < debut) {
+  if (debut < 0) {
     throw new Error("La réponse de l'IA n'est pas un JSON valide.");
   }
-  const candidat = nettoye.slice(debut, fin + 1);
-  try {
-    return JSON.parse(candidat);
-  } catch {
-    return JSON.parse(assainirChainesJson(candidat));
+  const fin = nettoye.lastIndexOf("}");
+  const candidats: string[] = [];
+  if (fin > debut) {
+    const brut = nettoye.slice(debut, fin + 1);
+    candidats.push(brut, assainirChainesJson(brut));
   }
+  const reste = nettoye.slice(debut);
+  const repare = reparerJsonTronque(assainirChainesJson(reste));
+  if (repare) candidats.push(repare);
+
+  for (const candidat of candidats) {
+    try {
+      return JSON.parse(candidat);
+    } catch {
+      // on tente le candidat suivant
+    }
+  }
+  throw new Error("La réponse de l'IA n'est pas un JSON valide.");
 }
