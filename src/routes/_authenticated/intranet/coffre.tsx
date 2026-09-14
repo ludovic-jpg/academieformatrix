@@ -16,6 +16,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { nomFichierSur } from "@/lib/storage";
 import { DossiersApprenants } from "@/components/DossiersApprenants";
+import { VisionneuseFichier, type ApercuFichier } from "@/components/VisionneuseFichier";
+import { construireApercuScorm } from "@/lib/supports/scormPreview";
 
 export const Route = createFileRoute("/_authenticated/intranet/coffre")({
   component: Coffre,
@@ -74,6 +76,9 @@ function Coffre() {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [copie, setCopie] = useState(false);
+  const [apercu, setApercu] = useState<ApercuFichier | null>(null);
+  const [apercuUrlObjet, setApercuUrlObjet] = useState<string | null>(null);
+  const [chargementApercu, setChargementApercu] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -140,15 +145,52 @@ function Coffre() {
     await chargerFormation(id);
   };
 
-  const ouvrir = async (fichier: Fichier, telechargement: boolean) => {
+  const telecharger = async (fichier: Fichier) => {
     const { data, error } = await supabase.storage
       .from("coffre")
-      .createSignedUrl(fichier.chemin, 300, telechargement ? { download: fichier.nom } : undefined);
+      .createSignedUrl(fichier.chemin, 300, { download: fichier.nom });
     if (error || !data) {
-      setErreur("Impossible d'ouvrir ce fichier pour le moment.");
+      setErreur("Impossible de télécharger ce fichier pour le moment.");
       return;
     }
     window.open(data.signedUrl, "_blank", "noopener");
+  };
+
+  const fermerApercu = () => {
+    if (apercuUrlObjet) URL.revokeObjectURL(apercuUrlObjet);
+    setApercuUrlObjet(null);
+    setApercu(null);
+  };
+
+  /**
+   * Visionneuse en incrustation : les PDF s'affichent directement via leur
+   * URL signée (le navigateur les rend nativement) ; les paquets SCORM sont
+   * dézippés puis reconstruits en une page HTML autonome avant affichage.
+   */
+  const previsualiser = async (fichier: Fichier) => {
+    setErreur(null);
+    setChargementApercu(fichier.id);
+    try {
+      const { data, error } = await supabase.storage
+        .from("coffre")
+        .createSignedUrl(fichier.chemin, 300);
+      if (error || !data) throw new Error("Impossible d'ouvrir ce fichier pour le moment.");
+
+      if (/\.zip$/i.test(fichier.nom)) {
+        const reponse = await fetch(data.signedUrl);
+        if (!reponse.ok) throw new Error("Le paquet n'a pas pu être téléchargé pour aperçu.");
+        const html = await construireApercuScorm(await reponse.blob());
+        const urlObjet = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+        setApercuUrlObjet(urlObjet);
+        setApercu({ titre: fichier.nom, url: urlObjet });
+      } else {
+        setApercu({ titre: fichier.nom, url: data.signedUrl });
+      }
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : "Impossible de prévisualiser ce fichier.");
+    } finally {
+      setChargementApercu(null);
+    }
   };
 
   const deposer = async (fichier: File) => {
@@ -249,15 +291,20 @@ function Coffre() {
           variant="ghost"
           size="icon"
           aria-label={`Aperçu de ${fichier.nom}`}
-          onClick={() => void ouvrir(fichier, false)}
+          disabled={chargementApercu === fichier.id}
+          onClick={() => void previsualiser(fichier)}
         >
-          <Eye className="h-4 w-4" />
+          {chargementApercu === fichier.id ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
         </Button>
         <Button
           variant="ghost"
           size="icon"
           aria-label={`Télécharger ${fichier.nom}`}
-          onClick={() => void ouvrir(fichier, true)}
+          onClick={() => void telecharger(fichier)}
         >
           <Download className="h-4 w-4" />
         </Button>
@@ -454,6 +501,8 @@ function Coffre() {
       )}
 
       {formationId && <DossiersApprenants formationId={formationId} />}
+
+      <VisionneuseFichier apercu={apercu} onFermer={fermerApercu} />
     </div>
   );
 }
