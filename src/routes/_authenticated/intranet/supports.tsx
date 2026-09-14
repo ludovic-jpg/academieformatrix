@@ -328,13 +328,6 @@ function Supports() {
         <Card>
           <CardHeader>
             <CardTitle>Mes supports de formation</CardTitle>
-            <CardDescription>
-              Choisissez un parcours : pour chaque module, l'assistant pédagogique produit un
-              support théorique et un support d'exercices de 15 diapositives, fondées sur une
-              recherche des concepts clés du domaine. Le PDF est déposé automatiquement dans le
-              coffre-fort pédagogique du parcours ; le PowerPoint (éditable) est téléchargé
-              directement sur votre poste et n'est jamais archivé dans le coffre-fort.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -366,6 +359,12 @@ function Supports() {
                   <span className="text-sm text-muted-foreground">En cours : {progression}</span>
                 )}
               </div>
+            )}
+            {enCours && (
+              <p className="text-sm text-muted-foreground">
+                La génération peut prendre plusieurs minutes. Vous retrouverez les supports dans le
+                coffre-fort pédagogique correspondant.
+              </p>
             )}
             {erreur && <p className="text-sm text-destructive">{erreur}</p>}
           </CardContent>
