@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Loader2, Mail, UserPlus } from "lucide-react";
+import { Copy, Loader2, Mail, Plus, Save, UserPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,13 @@ interface Dossier {
 
 const DOCUMENTS_ATTENDUS = ["recueil", "positionnement", "acquis"] as const;
 
+const NOUVEL_APPRENANT_VIDE = {
+  apprenant_prenom: "",
+  apprenant_nom: "",
+  apprenant_email: "",
+  apprenant_telephone: "",
+};
+
 function jetonAleatoire() {
   const octets = new Uint8Array(24);
   crypto.getRandomValues(octets);
@@ -57,6 +64,9 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false);
+  const [nouvelApprenant, setNouvelApprenant] = useState(NOUVEL_APPRENANT_VIDE);
+  const [creationOccupee, setCreationOccupee] = useState(false);
 
   const charger = useCallback(async () => {
     const { data: utilisateur } = await supabase.auth.getUser();
@@ -148,6 +158,40 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
     setOccupe(false);
   };
 
+  const creerApprenant = async () => {
+    if (
+      !nouvelApprenant.apprenant_prenom.trim() ||
+      !nouvelApprenant.apprenant_nom.trim() ||
+      !nouvelApprenant.apprenant_email.trim()
+    ) {
+      return;
+    }
+    setCreationOccupee(true);
+    setErreur(null);
+    setMessage(null);
+    const { data: utilisateur } = await supabase.auth.getUser();
+    if (!utilisateur.user) {
+      setErreur("Votre session a expiré, reconnectez-vous puis réessayez.");
+      setCreationOccupee(false);
+      return;
+    }
+    const { data: creee, error } = await supabase
+      .from("apprenants")
+      .insert({ formateur_id: utilisateur.user.id, ...nouvelApprenant })
+      .select("id")
+      .single();
+    if (error) {
+      setErreur("La fiche apprenant n'a pas pu être créée : " + error.message);
+    } else {
+      setMessage("Fiche apprenant créée. Vous pouvez l'associer au coffre-fort ci-dessous.");
+      setNouvelApprenant(NOUVEL_APPRENANT_VIDE);
+      setFormulaireOuvert(false);
+      if (creee?.id) setApprenantId(creee.id);
+    }
+    await charger();
+    setCreationOccupee(false);
+  };
+
   const lancerWorkflow = async (dossier: Dossier, etape: string) => {
     setOccupe(true);
     setErreur(null);
@@ -208,11 +252,93 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
             )}
             Associer au coffre-fort
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setFormulaireOuvert((v) => !v)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvel apprenant
+          </Button>
         </div>
-        {apprenants.length === 0 && (
+        {apprenants.length === 0 && !formulaireOuvert && (
           <p className="text-xs text-muted-foreground">
-            Aucune fiche apprenant disponible pour le moment.
+            Aucune fiche apprenant disponible pour le moment. Créez-en une avec
+            « Nouvel apprenant ».
           </p>
+        )}
+
+        {formulaireOuvert && (
+          <div className="grid gap-4 rounded-md border p-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="nouvel-apprenant-prenom" className="text-sm font-bold text-primary">
+                Prénom
+              </Label>
+              <Input
+                id="nouvel-apprenant-prenom"
+                value={nouvelApprenant.apprenant_prenom}
+                onChange={(e) =>
+                  setNouvelApprenant((f) => ({ ...f, apprenant_prenom: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nouvel-apprenant-nom" className="text-sm font-bold text-primary">
+                Nom
+              </Label>
+              <Input
+                id="nouvel-apprenant-nom"
+                value={nouvelApprenant.apprenant_nom}
+                onChange={(e) =>
+                  setNouvelApprenant((f) => ({ ...f, apprenant_nom: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nouvel-apprenant-email" className="text-sm font-bold text-primary">
+                Email
+              </Label>
+              <Input
+                id="nouvel-apprenant-email"
+                type="email"
+                value={nouvelApprenant.apprenant_email}
+                onChange={(e) =>
+                  setNouvelApprenant((f) => ({ ...f, apprenant_email: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nouvel-apprenant-telephone" className="text-sm font-bold text-primary">
+                Téléphone
+              </Label>
+              <Input
+                id="nouvel-apprenant-telephone"
+                value={nouvelApprenant.apprenant_telephone}
+                onChange={(e) =>
+                  setNouvelApprenant((f) => ({ ...f, apprenant_telephone: e.target.value }))
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Button
+                type="button"
+                disabled={
+                  creationOccupee ||
+                  !nouvelApprenant.apprenant_prenom.trim() ||
+                  !nouvelApprenant.apprenant_nom.trim() ||
+                  !nouvelApprenant.apprenant_email.trim()
+                }
+                onClick={creerApprenant}
+              >
+                {creationOccupee ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Créer la fiche apprenant
+              </Button>
+            </div>
+          </div>
         )}
 
         <ul className="space-y-3">
