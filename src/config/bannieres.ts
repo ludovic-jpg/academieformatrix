@@ -1,7 +1,6 @@
 import {
   BookOpen,
   ClipboardCheck,
-  FileSignature,
   GraduationCap,
   Presentation,
   ShieldCheck,
@@ -54,12 +53,6 @@ export const BANNIERES: Record<string, Banniere> = {
     description: "Générez vos diaporamas PowerPoint et vos PDF, module par module.",
     icone: Presentation,
     image: "/bannieres/supports.jpg",
-  },
-  "/intranet/demande-formation": {
-    titre: "Demande de formation",
-    description: "Constituez le dossier de formation d'un apprenant et de son entreprise.",
-    icone: FileSignature,
-    image: "/bannieres/demande-formation.jpg",
   },
   "/intranet/admin": {
     titre: "Administration",

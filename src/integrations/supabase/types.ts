@@ -100,80 +100,6 @@ export type Database = {
           },
         ]
       }
-      demandes_formation: {
-        Row: {
-          apprenant_email: string
-          apprenant_id: string | null
-          apprenant_nom: string
-          apprenant_prenom: string
-          apprenant_telephone: string
-          archivee: boolean
-          contact_email: string
-          contact_nom: string
-          created_at: string
-          entreprise_adresse: string
-          entreprise_nom: string
-          entreprise_siret: string
-          formateur_id: string
-          formation_souhaitee: string
-          id: string
-          repondu_at: string | null
-          reponse: string
-          statut: Database["public"]["Enums"]["statut_demande"]
-          updated_at: string
-        }
-        Insert: {
-          apprenant_email?: string
-          apprenant_id?: string | null
-          apprenant_nom?: string
-          apprenant_prenom?: string
-          apprenant_telephone?: string
-          archivee?: boolean
-          contact_email?: string
-          contact_nom?: string
-          created_at?: string
-          entreprise_adresse?: string
-          entreprise_nom?: string
-          entreprise_siret?: string
-          formateur_id: string
-          formation_souhaitee?: string
-          id?: string
-          repondu_at?: string | null
-          reponse?: string
-          statut?: Database["public"]["Enums"]["statut_demande"]
-          updated_at?: string
-        }
-        Update: {
-          apprenant_email?: string
-          apprenant_id?: string | null
-          apprenant_nom?: string
-          apprenant_prenom?: string
-          apprenant_telephone?: string
-          archivee?: boolean
-          contact_email?: string
-          contact_nom?: string
-          created_at?: string
-          entreprise_adresse?: string
-          entreprise_nom?: string
-          entreprise_siret?: string
-          formateur_id?: string
-          formation_souhaitee?: string
-          id?: string
-          repondu_at?: string | null
-          reponse?: string
-          statut?: Database["public"]["Enums"]["statut_demande"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "demandes_formation_apprenant_id_fkey"
-            columns: ["apprenant_id"]
-            isOneToOne: false
-            referencedRelation: "apprenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       documents_dossier: {
         Row: {
           chemin: string
@@ -622,7 +548,6 @@ export type Database = {
         | "realisation"
         | "finalisation"
       statut_candidature: "en_attente" | "validee" | "refusee"
-      statut_demande: "nouvelle" | "en_cours" | "traitee"
       type_piece: "cv" | "diplome" | "identite" | "casier" | "autre"
       type_questionnaire: "positionnement" | "acquis"
     }
@@ -760,7 +685,6 @@ export const Constants = {
         "finalisation",
       ],
       statut_candidature: ["en_attente", "validee", "refusee"],
-      statut_demande: ["nouvelle", "en_cours", "traitee"],
       type_piece: ["cv", "diplome", "identite", "casier", "autre"],
       type_questionnaire: ["positionnement", "acquis"],
     },

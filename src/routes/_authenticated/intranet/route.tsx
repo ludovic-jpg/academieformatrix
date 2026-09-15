@@ -20,7 +20,6 @@ const ONGLETS = [
   { to: "/intranet/positionnement", label: "Test de Positionnement" },
   { to: "/intranet/acquis", label: "Évaluation des Acquis" },
   { to: "/intranet/supports", label: "Mes supports de formation" },
-  { to: "/intranet/demande-formation", label: "Demande de formation" },
   { to: "/intranet/coffre", label: "Coffre-fort pédagogique" },
 ] as const;
 

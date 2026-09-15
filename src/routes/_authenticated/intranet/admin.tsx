@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/intranet/admin")({
@@ -28,24 +27,6 @@ interface Candidature {
   siret: string;
   statut: string;
   consentement: boolean;
-  created_at: string;
-}
-
-interface DemandeAdmin {
-  id: string;
-  archivee: boolean;
-  apprenant_nom: string;
-  apprenant_prenom: string;
-  apprenant_email: string;
-  apprenant_telephone: string;
-  entreprise_nom: string;
-  entreprise_siret: string;
-  entreprise_adresse: string;
-  contact_nom: string;
-  contact_email: string;
-  formation_souhaitee: string;
-  statut: string;
-  reponse: string;
   created_at: string;
 }
 
@@ -79,7 +60,6 @@ const LIBELLES: Record<string, string> = {
 };
 
 const ONGLETS = [
-  ["formation", "Dossiers de formation"],
   ["candidatures", "Candidatures de formateurs"],
   ["evaluations", "Évaluations apprenants"],
 ] as const;
@@ -87,13 +67,11 @@ const ONGLETS = [
 type Onglet = (typeof ONGLETS)[number][0];
 
 function Administration() {
-  const [onglet, setOnglet] = useState<Onglet>("formation");
+  const [onglet, setOnglet] = useState<Onglet>("candidatures");
   const [autorise, setAutorise] = useState<boolean | null>(null);
   const [candidatures, setCandidatures] = useState<Candidature[]>([]);
   const [pieces, setPieces] = useState<PieceAdmin[]>([]);
-  const [demandes, setDemandes] = useState<DemandeAdmin[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationAdmin[]>([]);
-  const [reponses, setReponses] = useState<Record<string, string>>({});
   const [chargement, setChargement] = useState(true);
 
   const charger = async () => {
@@ -124,14 +102,6 @@ function Administration() {
       .order("created_at", { ascending: false });
     setPieces((piecesData ?? []) as unknown as PieceAdmin[]);
 
-    const { data: demandesData } = await supabase
-      .from("demandes_formation")
-      .select("*")
-      .order("created_at", { ascending: false });
-    const liste = (demandesData ?? []) as unknown as DemandeAdmin[];
-    setDemandes(liste);
-    setReponses(Object.fromEntries(liste.map((d) => [d.id, d.reponse ?? ""])));
-
     const { data: evaluationsData } = await supabase
       .from("reponses_questionnaires")
       .select("id, score, total, soumis_at, dossiers_apprenant(apprenants(apprenant_prenom, apprenant_nom), formations(titre)), questionnaires(type, titre)")
@@ -143,22 +113,6 @@ function Administration() {
   useEffect(() => {
     void charger();
   }, []);
-
-  const repondre = async (
-    demande: DemandeAdmin,
-    statut: "en_cours" | "traitee",
-  ) => {
-    await supabase
-      .from("demandes_formation")
-      .update({
-        reponse: reponses[demande.id] ?? "",
-        statut,
-        archivee: statut === "traitee",
-        repondu_at: new Date().toISOString(),
-      })
-      .eq("id", demande.id);
-    await charger();
-  };
 
   const changerStatut = async (userId: string, statut: string) => {
     await supabase
@@ -190,111 +144,6 @@ function Administration() {
       </p>
     );
   }
-
-  const carteDemande = (demande: DemandeAdmin, archive: boolean) => (
-    <div key={demande.id} className="space-y-3 rounded-md border p-4">
-      <div>
-        <p className="text-sm font-bold text-primary">
-          {demande.apprenant_prenom} {demande.apprenant_nom} —{" "}
-          {demande.formation_souhaitee}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {new Date(demande.created_at).toLocaleDateString("fr-FR")} —{" "}
-          {demande.statut === "traitee"
-            ? "validée"
-            : demande.statut === "en_cours"
-              ? "en cours"
-              : "nouvelle"}
-        </p>
-      </div>
-      <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-        <p>
-          Apprenant : {demande.apprenant_email} {demande.apprenant_telephone}
-        </p>
-        <p>
-          Entreprise : {demande.entreprise_nom} — SIRET{" "}
-          {demande.entreprise_siret}
-        </p>
-        <p>Adresse : {demande.entreprise_adresse}</p>
-        <p>
-          Contact : {demande.contact_nom} {demande.contact_email}
-        </p>
-      </div>
-      {archive ? (
-        demande.reponse && (
-          <p className="whitespace-pre-wrap rounded-md bg-muted p-3 text-xs">
-            {demande.reponse}
-          </p>
-        )
-      ) : (
-        <>
-          <Textarea
-            rows={3}
-            placeholder="Votre commentaire au formateur…"
-            value={reponses[demande.id] ?? ""}
-            onChange={(e) =>
-              setReponses((r) => ({ ...r, [demande.id]: e.target.value }))
-            }
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void repondre(demande, "en_cours")}
-            >
-              Enregistrer (en cours)
-            </Button>
-            <Button size="sm" onClick={() => void repondre(demande, "traitee")}>
-              <Check className="mr-2 h-4 w-4" />
-              Valider et archiver
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-
-  const sectionDemandes = () => {
-    const aTraiter = demandes.filter((d) => !d.archivee);
-    const archives = demandes.filter((d) => d.archivee);
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-primary">À traiter</CardTitle>
-            <CardDescription>
-              Apportez une réponse qualitative, puis validez pour archiver le
-              dossier dans les deux espaces.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {aTraiter.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Aucun dossier en attente.
-              </p>
-            )}
-            {aTraiter.map((d) => carteDemande(d, false))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-primary">Archives</CardTitle>
-            <CardDescription>
-              Dossiers validés, conservés avec leur réponse.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {archives.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Aucun dossier archivé.
-              </p>
-            )}
-            {archives.map((d) => carteDemande(d, true))}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
 
   const sectionCandidatures = () => (
     <div className="space-y-6">
@@ -452,9 +301,7 @@ function Administration() {
 
       {onglet === "candidatures"
         ? sectionCandidatures()
-        : onglet === "evaluations"
-          ? sectionEvaluations()
-          : sectionDemandes()}
+        : sectionEvaluations()}
     </div>
   );
 }

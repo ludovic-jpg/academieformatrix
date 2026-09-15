@@ -211,8 +211,7 @@ export function DossiersApprenants({ formationId }: { formationId: string }) {
         </div>
         {apprenants.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Enregistrez d'abord une fiche apprenant depuis « Demande de
-            formation ».
+            Aucune fiche apprenant disponible pour le moment.
           </p>
         )}
 

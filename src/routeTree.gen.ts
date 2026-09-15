@@ -20,7 +20,6 @@ import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedIntranetAcquisRouteImport } from './routes/_authenticated/intranet/acquis'
 import { Route as AuthenticatedIntranetAdminRouteImport } from './routes/_authenticated/intranet/admin'
 import { Route as AuthenticatedIntranetCoffreRouteImport } from './routes/_authenticated/intranet/coffre'
-import { Route as AuthenticatedIntranetDemandeFormationRouteImport } from './routes/_authenticated/intranet/demande-formation'
 import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
 import { Route as AuthenticatedIntranetPositionnementRouteImport } from './routes/_authenticated/intranet/positionnement'
 import { Route as AuthenticatedIntranetProfilRouteImport } from './routes/_authenticated/intranet/profil'
@@ -87,12 +86,6 @@ const AuthenticatedIntranetCoffreRoute =
     path: '/coffre',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
-const AuthenticatedIntranetDemandeFormationRoute =
-  AuthenticatedIntranetDemandeFormationRouteImport.update({
-    id: '/demande-formation',
-    path: '/demande-formation',
-    getParentRoute: () => AuthenticatedIntranetRouteRoute,
-  } as any)
 const AuthenticatedIntranetFormationsRoute =
   AuthenticatedIntranetFormationsRouteImport.update({
     id: '/formations',
@@ -134,7 +127,6 @@ export interface FileRoutesByFullPath {
   '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
   '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
-  '/intranet/demande-formation': typeof AuthenticatedIntranetDemandeFormationRoute
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
@@ -151,7 +143,6 @@ export interface FileRoutesByTo {
   '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
   '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
-  '/intranet/demande-formation': typeof AuthenticatedIntranetDemandeFormationRoute
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/intranet/profil': typeof AuthenticatedIntranetProfilRoute
@@ -171,7 +162,6 @@ export interface FileRoutesById {
   '/_authenticated/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/_authenticated/intranet/admin': typeof AuthenticatedIntranetAdminRoute
   '/_authenticated/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
-  '/_authenticated/intranet/demande-formation': typeof AuthenticatedIntranetDemandeFormationRoute
   '/_authenticated/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
   '/_authenticated/intranet/positionnement': typeof AuthenticatedIntranetPositionnementRoute
   '/_authenticated/intranet/profil': typeof AuthenticatedIntranetProfilRoute
@@ -191,7 +181,6 @@ export interface FileRouteTypes {
     | '/intranet/acquis'
     | '/intranet/admin'
     | '/intranet/coffre'
-    | '/intranet/demande-formation'
     | '/intranet/formations'
     | '/intranet/positionnement'
     | '/intranet/profil'
@@ -208,7 +197,6 @@ export interface FileRouteTypes {
     | '/intranet/acquis'
     | '/intranet/admin'
     | '/intranet/coffre'
-    | '/intranet/demande-formation'
     | '/intranet/formations'
     | '/intranet/positionnement'
     | '/intranet/profil'
@@ -227,7 +215,6 @@ export interface FileRouteTypes {
     | '/_authenticated/intranet/acquis'
     | '/_authenticated/intranet/admin'
     | '/_authenticated/intranet/coffre'
-    | '/_authenticated/intranet/demande-formation'
     | '/_authenticated/intranet/formations'
     | '/_authenticated/intranet/positionnement'
     | '/_authenticated/intranet/profil'
@@ -325,13 +312,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetCoffreRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
-    '/_authenticated/intranet/demande-formation': {
-      id: '/_authenticated/intranet/demande-formation'
-      path: '/demande-formation'
-      fullPath: '/intranet/demande-formation'
-      preLoaderRoute: typeof AuthenticatedIntranetDemandeFormationRouteImport
-      parentRoute: typeof AuthenticatedIntranetRouteRoute
-    }
     '/_authenticated/intranet/formations': {
       id: '/_authenticated/intranet/formations'
       path: '/formations'
@@ -374,7 +354,6 @@ interface AuthenticatedIntranetRouteRouteChildren {
   AuthenticatedIntranetAcquisRoute: typeof AuthenticatedIntranetAcquisRoute
   AuthenticatedIntranetAdminRoute: typeof AuthenticatedIntranetAdminRoute
   AuthenticatedIntranetCoffreRoute: typeof AuthenticatedIntranetCoffreRoute
-  AuthenticatedIntranetDemandeFormationRoute: typeof AuthenticatedIntranetDemandeFormationRoute
   AuthenticatedIntranetFormationsRoute: typeof AuthenticatedIntranetFormationsRoute
   AuthenticatedIntranetPositionnementRoute: typeof AuthenticatedIntranetPositionnementRoute
   AuthenticatedIntranetProfilRoute: typeof AuthenticatedIntranetProfilRoute
@@ -387,8 +366,6 @@ const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteCh
     AuthenticatedIntranetAcquisRoute: AuthenticatedIntranetAcquisRoute,
     AuthenticatedIntranetAdminRoute: AuthenticatedIntranetAdminRoute,
     AuthenticatedIntranetCoffreRoute: AuthenticatedIntranetCoffreRoute,
-    AuthenticatedIntranetDemandeFormationRoute:
-      AuthenticatedIntranetDemandeFormationRoute,
     AuthenticatedIntranetFormationsRoute: AuthenticatedIntranetFormationsRoute,
     AuthenticatedIntranetPositionnementRoute:
       AuthenticatedIntranetPositionnementRoute,
