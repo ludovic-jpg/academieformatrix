@@ -2,21 +2,36 @@ import type { LucideIcon } from "lucide-react";
 
 /**
  * Bandeau d'en-tête affiché en haut de chaque onglet de l'espace formateur.
- * Purement graphique (aucune image à charger) : dégradé de la charte Formatrix,
- * icône de l'onglet et liseré or.
+ * Photo thématique en fond, assombrie par un dégradé de la charte Formatrix
+ * pour garder le texte lisible, icône de l'onglet et liseré or.
  */
 export function BanniereOnglet({
   titre,
   description,
   icone: Icone,
+  image,
 }: {
   titre: string;
   description?: string;
   icone: LucideIcon;
+  image?: string;
 }) {
   return (
     <section className="mb-6 overflow-hidden rounded-lg border">
-      <div className="relative flex items-center gap-4 bg-gradient-to-r from-primary to-primary/80 px-5 py-6">
+      <div className="relative flex items-center gap-4 overflow-hidden px-5 py-6">
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/60"
+        />
         <span
           aria-hidden="true"
           className="absolute inset-y-0 right-0 w-40 bg-[radial-gradient(circle_at_top_right,rgba(253,224,5,0.25),transparent_70%)]"

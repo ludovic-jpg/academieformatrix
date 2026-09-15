@@ -149,6 +149,7 @@ function Intranet() {
                   titre={banniere.titre}
                   description={banniere.description}
                   icone={banniere.icone}
+                  image={banniere.image}
                 />
               )}
               <Outlet />

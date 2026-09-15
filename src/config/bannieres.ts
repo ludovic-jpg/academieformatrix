@@ -14,6 +14,7 @@ export interface Banniere {
   titre: string;
   description: string;
   icone: LucideIcon;
+  image: string;
 }
 
 /** Bandeau affiché en haut de chaque onglet, indexé par chemin de route. */
@@ -22,40 +23,48 @@ export const BANNIERES: Record<string, Banniere> = {
     titre: "Profil formateur",
     description: "Vos informations, vos pièces justificatives et votre consentement RGPD.",
     icone: UserRound,
+    image: "/bannieres/profil.jpg",
   },
   "/intranet/formations": {
     titre: "Mes formations",
     description: "Créez vos programmes de formation et retrouvez l'ensemble de vos parcours.",
     icone: GraduationCap,
+    image: "/bannieres/formations.jpg",
   },
   "/intranet/positionnement": {
     titre: "Test de positionnement",
     description: "Évaluez le niveau de départ de vos apprenants avant l'entrée en formation.",
     icone: Target,
+    image: "/bannieres/positionnement.jpg",
   },
   "/intranet/acquis": {
     titre: "Évaluation des acquis",
     description: "Mesurez les compétences acquises à l'issue de l'action de formation.",
     icone: ClipboardCheck,
+    image: "/bannieres/acquis.jpg",
   },
   "/intranet/coffre": {
     titre: "Coffre-fort pédagogique",
     description: "Centralisez et partagez les documents de chaque parcours en toute sécurité.",
     icone: ShieldCheck,
+    image: "/bannieres/coffre.jpg",
   },
   "/intranet/supports": {
     titre: "Mes supports de formation",
     description: "Générez vos diaporamas PowerPoint et vos PDF, module par module.",
     icone: Presentation,
+    image: "/bannieres/supports.jpg",
   },
   "/intranet/demande-formation": {
     titre: "Demande de formation",
     description: "Constituez le dossier de formation d'un apprenant et de son entreprise.",
     icone: FileSignature,
+    image: "/bannieres/demande-formation.jpg",
   },
   "/intranet/admin": {
     titre: "Administration",
     description: "Dossiers de formation et candidatures de formateurs.",
     icone: BookOpen,
+    image: "/bannieres/admin.jpg",
   },
 };
