@@ -6,15 +6,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const entree = z.object({ demandeId: z.string().uuid() });
 
 /**
- * Envoie la notification de nouvelle demande de budget à l'administration.
+ * Envoie la notification de nouvelle demande de formation à l'administration.
  * La demande est relue côté serveur avec les droits du formateur connecté.
  */
-export const notifierDemandeBudget = createServerFn({ method: "POST" })
+export const notifierDemandeFormation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => entree.parse(data))
   .handler(async ({ data, context }) => {
     const { data: demande, error } = await context.supabase
-      .from("demandes_budget")
+      .from("demandes_formation")
       .select("*")
       .eq("id", data.demandeId)
       .maybeSingle();
@@ -28,10 +28,10 @@ export const notifierDemandeBudget = createServerFn({ method: "POST" })
     );
 
     const resultat = await sendTemplateEmail(
-      "demande-budget",
+      "demande-formation",
       "ludovic@formatrix.fr",
       {
-        idempotencyKey: `demande-budget-${demande.id}`,
+        idempotencyKey: `demande-formation-${demande.id}`,
         ...(demande.contact_email ? { replyTo: demande.contact_email } : {}),
         templateData: {
           apprenantPrenom: demande.apprenant_prenom,
@@ -44,10 +44,6 @@ export const notifierDemandeBudget = createServerFn({ method: "POST" })
           contactNom: demande.contact_nom,
           contactEmail: demande.contact_email,
           formationSouhaitee: demande.formation_souhaitee,
-          periode: demande.periode,
-          nombreHeures: demande.nombre_heures,
-          budgetEstime: demande.budget_estime,
-          commentaire: demande.commentaire,
         },
       },
     );

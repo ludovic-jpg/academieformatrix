@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 
-import { template as demandeBudgetTemplate } from './demande-budget'
+import { template as demandeFormationTemplate } from './demande-formation'
 import { template as workflowApprenantTemplate } from './workflow-apprenant'
 
 export interface TemplateEntry {
@@ -17,6 +17,6 @@ export interface TemplateEntry {
  * Import and register new templates here after creating them in this directory.
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  'demande-budget': demandeBudgetTemplate,
+  'demande-formation': demandeFormationTemplate,
   'workflow-apprenant': workflowApprenantTemplate,
 }

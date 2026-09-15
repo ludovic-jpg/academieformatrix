@@ -1,5 +1,4 @@
 import {
-  Banknote,
   BookOpen,
   ClipboardCheck,
   FileSignature,
@@ -49,11 +48,6 @@ export const BANNIERES: Record<string, Banniere> = {
     description: "Générez vos diaporamas PowerPoint et vos PDF, module par module.",
     icone: Presentation,
   },
-  "/intranet/budget": {
-    titre: "Demande de budget",
-    description: "Transmettez vos demandes de financement à Formatrix.",
-    icone: Banknote,
-  },
   "/intranet/demande-formation": {
     titre: "Demande de formation",
     description: "Constituez le dossier de formation d'un apprenant et de son entreprise.",
@@ -61,7 +55,7 @@ export const BANNIERES: Record<string, Banniere> = {
   },
   "/intranet/admin": {
     titre: "Administration",
-    description: "Demandes de budget, dossiers de formation et candidatures de formateurs.",
+    description: "Dossiers de formation et candidatures de formateurs.",
     icone: BookOpen,
   },
 };

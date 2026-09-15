@@ -1,19 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { FormulaireDemande } from "@/components/FormulaireDemande";
+import { FormulaireDemandeFormation } from "@/components/FormulaireDemandeFormation";
 
 export const Route = createFileRoute(
   "/_authenticated/intranet/demande-formation",
 )({
-  component: DemandeFormation,
+  component: FormulaireDemandeFormation,
 });
-
-function DemandeFormation() {
-  return (
-    <FormulaireDemande
-      typeDemande="formation"
-      titre="Demande de formation"
-      description="Constituez le dossier de formation d'un apprenant. Il est transmis à l'administration Formatrix, puis archivé une fois validé."
-    />
-  );
-}

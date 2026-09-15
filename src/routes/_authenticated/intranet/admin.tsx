@@ -33,7 +33,6 @@ interface Candidature {
 
 interface DemandeAdmin {
   id: string;
-  type_demande: string;
   archivee: boolean;
   apprenant_nom: string;
   apprenant_prenom: string;
@@ -80,7 +79,6 @@ const LIBELLES: Record<string, string> = {
 };
 
 const ONGLETS = [
-  ["budget", "Demandes de budget"],
   ["formation", "Dossiers de formation"],
   ["candidatures", "Candidatures de formateurs"],
   ["evaluations", "Évaluations apprenants"],
@@ -89,7 +87,7 @@ const ONGLETS = [
 type Onglet = (typeof ONGLETS)[number][0];
 
 function Administration() {
-  const [onglet, setOnglet] = useState<Onglet>("budget");
+  const [onglet, setOnglet] = useState<Onglet>("formation");
   const [autorise, setAutorise] = useState<boolean | null>(null);
   const [candidatures, setCandidatures] = useState<Candidature[]>([]);
   const [pieces, setPieces] = useState<PieceAdmin[]>([]);
@@ -127,7 +125,7 @@ function Administration() {
     setPieces((piecesData ?? []) as unknown as PieceAdmin[]);
 
     const { data: demandesData } = await supabase
-      .from("demandes_budget")
+      .from("demandes_formation")
       .select("*")
       .order("created_at", { ascending: false });
     const liste = (demandesData ?? []) as unknown as DemandeAdmin[];
@@ -151,7 +149,7 @@ function Administration() {
     statut: "en_cours" | "traitee",
   ) => {
     await supabase
-      .from("demandes_budget")
+      .from("demandes_formation")
       .update({
         reponse: reponses[demande.id] ?? "",
         statut,
@@ -256,12 +254,9 @@ function Administration() {
     </div>
   );
 
-  const sectionDemandes = (type: "budget" | "formation") => {
-    const duType = demandes.filter(
-      (d) => (d.type_demande ?? "budget") === type,
-    );
-    const aTraiter = duType.filter((d) => !d.archivee);
-    const archives = duType.filter((d) => d.archivee);
+  const sectionDemandes = () => {
+    const aTraiter = demandes.filter((d) => !d.archivee);
+    const archives = demandes.filter((d) => d.archivee);
     return (
       <div className="space-y-6">
         <Card>
@@ -459,7 +454,7 @@ function Administration() {
         ? sectionCandidatures()
         : onglet === "evaluations"
           ? sectionEvaluations()
-          : sectionDemandes(onglet)}
+          : sectionDemandes()}
     </div>
   );
 }

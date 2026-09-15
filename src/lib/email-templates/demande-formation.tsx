@@ -24,10 +24,6 @@ interface Props {
   contactNom?: string;
   contactEmail?: string;
   formationSouhaitee?: string;
-  periode?: string;
-  nombreHeures?: number;
-  budgetEstime?: number;
-  commentaire?: string;
 }
 
 const Ligne = ({ label, valeur }: { label: string; valeur?: string | undefined }) =>
@@ -46,15 +42,15 @@ const Email = (props: Props) => {
     <Html lang="fr" dir="ltr">
       <Head />
       <Preview>
-        Nouvelle demande de budget — {props.formationSouhaitee ?? "formation"}
+        Nouvelle demande de formation — {props.formationSouhaitee ?? "formation"}
       </Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={barre} />
-          <Heading style={titre}>Nouvelle demande de budget</Heading>
+          <Heading style={titre}>Nouvelle demande de formation</Heading>
           <Text style={ligne}>
-            Une demande de budget vient d'être déposée dans l'espace formateur
-            {props.formateurEmail ? ` par ${props.formateurEmail}` : ""}.
+            Une demande de formation vient d'être déposée dans l'espace
+            formateur{props.formateurEmail ? ` par ${props.formateurEmail}` : ""}.
           </Text>
           <Hr style={trait} />
           <Heading as="h2" style={sousTitre}>
@@ -77,16 +73,6 @@ const Email = (props: Props) => {
             Formation
           </Heading>
           <Ligne label="Formation souhaitée" valeur={props.formationSouhaitee} />
-          <Ligne label="Période envisagée" valeur={props.periode} />
-          <Ligne
-            label="Nombre d'heures"
-            valeur={props.nombreHeures ? `${props.nombreHeures} h` : undefined}
-          />
-          <Ligne
-            label="Budget estimé"
-            valeur={props.budgetEstime ? `${props.budgetEstime} €` : undefined}
-          />
-          <Ligne label="Commentaire" valeur={props.commentaire} />
           <Hr style={trait} />
           <Text style={pied}>
             Cette demande est consultable et traitable dans l'espace
@@ -101,8 +87,8 @@ const Email = (props: Props) => {
 export const template = {
   component: Email,
   subject: (data: Record<string, any>) =>
-    `Nouvelle demande de budget — ${data['formationSouhaitee'] ?? "formation"}`,
-  displayName: "Demande de budget (administration)",
+    `Nouvelle demande de formation — ${data['formationSouhaitee'] ?? "formation"}`,
+  displayName: "Demande de formation (administration)",
   to: "ludovic@formatrix.fr",
   previewData: {
     formateurEmail: "formateur@formatrix.fr",
@@ -116,10 +102,6 @@ export const template = {
     contactNom: "Paul Martin",
     contactEmail: "paul.martin@exemple.fr",
     formationSouhaitee: "Bureautique avancée",
-    periode: "Janvier 2027",
-    nombreHeures: 21,
-    budgetEstime: 2400,
-    commentaire: "Formation en présentiel souhaitée.",
   },
 } satisfies TemplateEntry;
 

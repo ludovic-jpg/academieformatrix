@@ -19,7 +19,6 @@ import { Route as PartageJetonRouteImport } from './routes/partage.$jeton'
 import { Route as AuthenticatedIntranetIndexRouteImport } from './routes/_authenticated/intranet/index'
 import { Route as AuthenticatedIntranetAcquisRouteImport } from './routes/_authenticated/intranet/acquis'
 import { Route as AuthenticatedIntranetAdminRouteImport } from './routes/_authenticated/intranet/admin'
-import { Route as AuthenticatedIntranetBudgetRouteImport } from './routes/_authenticated/intranet/budget'
 import { Route as AuthenticatedIntranetCoffreRouteImport } from './routes/_authenticated/intranet/coffre'
 import { Route as AuthenticatedIntranetDemandeFormationRouteImport } from './routes/_authenticated/intranet/demande-formation'
 import { Route as AuthenticatedIntranetFormationsRouteImport } from './routes/_authenticated/intranet/formations'
@@ -82,12 +81,6 @@ const AuthenticatedIntranetAdminRoute =
     path: '/admin',
     getParentRoute: () => AuthenticatedIntranetRouteRoute,
   } as any)
-const AuthenticatedIntranetBudgetRoute =
-  AuthenticatedIntranetBudgetRouteImport.update({
-    id: '/budget',
-    path: '/budget',
-    getParentRoute: () => AuthenticatedIntranetRouteRoute,
-  } as any)
 const AuthenticatedIntranetCoffreRoute =
   AuthenticatedIntranetCoffreRouteImport.update({
     id: '/coffre',
@@ -140,7 +133,6 @@ export interface FileRoutesByFullPath {
   '/partage/$jeton': typeof PartageJetonRoute
   '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
-  '/intranet/budget': typeof AuthenticatedIntranetBudgetRoute
   '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
   '/intranet/demande-formation': typeof AuthenticatedIntranetDemandeFormationRoute
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
@@ -158,7 +150,6 @@ export interface FileRoutesByTo {
   '/partage/$jeton': typeof PartageJetonRoute
   '/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/intranet/admin': typeof AuthenticatedIntranetAdminRoute
-  '/intranet/budget': typeof AuthenticatedIntranetBudgetRoute
   '/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
   '/intranet/demande-formation': typeof AuthenticatedIntranetDemandeFormationRoute
   '/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
@@ -179,7 +170,6 @@ export interface FileRoutesById {
   '/partage/$jeton': typeof PartageJetonRoute
   '/_authenticated/intranet/acquis': typeof AuthenticatedIntranetAcquisRoute
   '/_authenticated/intranet/admin': typeof AuthenticatedIntranetAdminRoute
-  '/_authenticated/intranet/budget': typeof AuthenticatedIntranetBudgetRoute
   '/_authenticated/intranet/coffre': typeof AuthenticatedIntranetCoffreRoute
   '/_authenticated/intranet/demande-formation': typeof AuthenticatedIntranetDemandeFormationRoute
   '/_authenticated/intranet/formations': typeof AuthenticatedIntranetFormationsRoute
@@ -200,7 +190,6 @@ export interface FileRouteTypes {
     | '/partage/$jeton'
     | '/intranet/acquis'
     | '/intranet/admin'
-    | '/intranet/budget'
     | '/intranet/coffre'
     | '/intranet/demande-formation'
     | '/intranet/formations'
@@ -218,7 +207,6 @@ export interface FileRouteTypes {
     | '/partage/$jeton'
     | '/intranet/acquis'
     | '/intranet/admin'
-    | '/intranet/budget'
     | '/intranet/coffre'
     | '/intranet/demande-formation'
     | '/intranet/formations'
@@ -238,7 +226,6 @@ export interface FileRouteTypes {
     | '/partage/$jeton'
     | '/_authenticated/intranet/acquis'
     | '/_authenticated/intranet/admin'
-    | '/_authenticated/intranet/budget'
     | '/_authenticated/intranet/coffre'
     | '/_authenticated/intranet/demande-formation'
     | '/_authenticated/intranet/formations'
@@ -331,13 +318,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntranetAdminRouteImport
       parentRoute: typeof AuthenticatedIntranetRouteRoute
     }
-    '/_authenticated/intranet/budget': {
-      id: '/_authenticated/intranet/budget'
-      path: '/budget'
-      fullPath: '/intranet/budget'
-      preLoaderRoute: typeof AuthenticatedIntranetBudgetRouteImport
-      parentRoute: typeof AuthenticatedIntranetRouteRoute
-    }
     '/_authenticated/intranet/coffre': {
       id: '/_authenticated/intranet/coffre'
       path: '/coffre'
@@ -393,7 +373,6 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedIntranetRouteRouteChildren {
   AuthenticatedIntranetAcquisRoute: typeof AuthenticatedIntranetAcquisRoute
   AuthenticatedIntranetAdminRoute: typeof AuthenticatedIntranetAdminRoute
-  AuthenticatedIntranetBudgetRoute: typeof AuthenticatedIntranetBudgetRoute
   AuthenticatedIntranetCoffreRoute: typeof AuthenticatedIntranetCoffreRoute
   AuthenticatedIntranetDemandeFormationRoute: typeof AuthenticatedIntranetDemandeFormationRoute
   AuthenticatedIntranetFormationsRoute: typeof AuthenticatedIntranetFormationsRoute
@@ -407,7 +386,6 @@ const AuthenticatedIntranetRouteRouteChildren: AuthenticatedIntranetRouteRouteCh
   {
     AuthenticatedIntranetAcquisRoute: AuthenticatedIntranetAcquisRoute,
     AuthenticatedIntranetAdminRoute: AuthenticatedIntranetAdminRoute,
-    AuthenticatedIntranetBudgetRoute: AuthenticatedIntranetBudgetRoute,
     AuthenticatedIntranetCoffreRoute: AuthenticatedIntranetCoffreRoute,
     AuthenticatedIntranetDemandeFormationRoute:
       AuthenticatedIntranetDemandeFormationRoute,

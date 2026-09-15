@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { notifierDemandeBudget } from "@/lib/budget.functions";
+import { notifierDemandeFormation } from "@/lib/formation-demande.functions";
 
 export const CHAMPS_DEMANDE = [
   ["apprenant_prenom", "Prénom de l'apprenant"],
@@ -78,15 +78,7 @@ export function libelleStatut(statut: string) {
       : "nouvelle";
 }
 
-export function FormulaireDemande({
-  typeDemande,
-  titre,
-  description,
-}: {
-  typeDemande: "budget" | "formation";
-  titre: string;
-  description: string;
-}) {
+export function FormulaireDemandeFormation() {
   const [onglet, setOnglet] = useState<"nouvelle" | "archives">("nouvelle");
   const [form, setForm] = useState(VIDE);
   const [envoi, setEnvoi] = useState(false);
@@ -100,12 +92,11 @@ export function FormulaireDemande({
     const { data: utilisateur } = await supabase.auth.getUser();
     if (!utilisateur.user) return;
     const { data } = await supabase
-      .from("demandes_budget")
+      .from("demandes_formation")
       .select(
         "id, apprenant_nom, apprenant_prenom, formation_souhaitee, statut, reponse, archivee, created_at",
       )
       .eq("formateur_id", utilisateur.user.id)
-      .eq("type_demande", typeDemande)
       .order("created_at", { ascending: false });
     setDemandes((data ?? []) as unknown as DemandeListee[]);
 
@@ -119,8 +110,7 @@ export function FormulaireDemande({
 
   useEffect(() => {
     void charger();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeDemande]);
+  }, []);
 
   const reutiliserFiche = (id: string) => {
     const fiche = apprenants.find((a) => a.id === id);
@@ -167,10 +157,9 @@ export function FormulaireDemande({
     setErreur(null);
     setMessage(null);
     const { data: creee, error } = await supabase
-      .from("demandes_budget")
+      .from("demandes_formation")
       .insert({
         formateur_id: utilisateur.user.id,
-        type_demande: typeDemande,
         ...form,
       })
       .select("id")
@@ -180,7 +169,7 @@ export function FormulaireDemande({
     } else {
       try {
         if (creee?.id) {
-          await notifierDemandeBudget({ data: { demandeId: creee.id } });
+          await notifierDemandeFormation({ data: { demandeId: creee.id } });
         }
       } catch (e) {
         console.error("Notification non envoyée", e);
@@ -239,8 +228,12 @@ export function FormulaireDemande({
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-primary">{titre}</CardTitle>
-              <CardDescription>{description}</CardDescription>
+              <CardTitle className="text-primary">Demande de formation</CardTitle>
+              <CardDescription>
+                Constituez le dossier de formation d'un apprenant. Il est
+                transmis à l'administration Formatrix, puis archivé une fois
+                validé.
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               {apprenants.length > 0 && (
@@ -265,13 +258,13 @@ export function FormulaireDemande({
               {CHAMPS_DEMANDE.map(([cle, label]) => (
                 <div key={cle} className="space-y-2">
                   <Label
-                    htmlFor={`${typeDemande}-${cle}`}
+                    htmlFor={`formation-${cle}`}
                     className="text-sm font-bold text-primary"
                   >
                     {label}
                   </Label>
                   <Input
-                    id={`${typeDemande}-${cle}`}
+                    id={`formation-${cle}`}
                     value={form[cle]}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, [cle]: e.target.value }))

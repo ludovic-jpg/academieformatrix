@@ -100,7 +100,7 @@ export type Database = {
           },
         ]
       }
-      demandes_budget: {
+      demandes_formation: {
         Row: {
           apprenant_email: string
           apprenant_id: string | null
@@ -108,8 +108,6 @@ export type Database = {
           apprenant_prenom: string
           apprenant_telephone: string
           archivee: boolean
-          budget_estime: number
-          commentaire: string
           contact_email: string
           contact_nom: string
           created_at: string
@@ -119,12 +117,9 @@ export type Database = {
           formateur_id: string
           formation_souhaitee: string
           id: string
-          nombre_heures: number
-          periode: string
           repondu_at: string | null
           reponse: string
           statut: Database["public"]["Enums"]["statut_demande"]
-          type_demande: string
           updated_at: string
         }
         Insert: {
@@ -134,8 +129,6 @@ export type Database = {
           apprenant_prenom?: string
           apprenant_telephone?: string
           archivee?: boolean
-          budget_estime?: number
-          commentaire?: string
           contact_email?: string
           contact_nom?: string
           created_at?: string
@@ -145,12 +138,9 @@ export type Database = {
           formateur_id: string
           formation_souhaitee?: string
           id?: string
-          nombre_heures?: number
-          periode?: string
           repondu_at?: string | null
           reponse?: string
           statut?: Database["public"]["Enums"]["statut_demande"]
-          type_demande?: string
           updated_at?: string
         }
         Update: {
@@ -160,8 +150,6 @@ export type Database = {
           apprenant_prenom?: string
           apprenant_telephone?: string
           archivee?: boolean
-          budget_estime?: number
-          commentaire?: string
           contact_email?: string
           contact_nom?: string
           created_at?: string
@@ -171,17 +159,14 @@ export type Database = {
           formateur_id?: string
           formation_souhaitee?: string
           id?: string
-          nombre_heures?: number
-          periode?: string
           repondu_at?: string | null
           reponse?: string
           statut?: Database["public"]["Enums"]["statut_demande"]
-          type_demande?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "demandes_budget_apprenant_id_fkey"
+            foreignKeyName: "demandes_formation_apprenant_id_fkey"
             columns: ["apprenant_id"]
             isOneToOne: false
             referencedRelation: "apprenants"
